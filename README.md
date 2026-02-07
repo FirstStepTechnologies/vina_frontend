@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍷 Vina - Adaptive LLM Learning Platform
 
-## Getting Started
+Welcome to the Vina Frontend project! This is a mobile-first web application built with **Next.js 14**, designed to provide personalized, adaptive learning content about Large Language Models (LLMs).
 
-First, run the development server:
+This guide will walk you through setting up the project on your computer, especially if you are new to frontend development.
+
+---
+
+## 🛠 Prerequisites
+
+Before you start, make sure you have these two essential tools installed:
+
+1.  **Node.js (LTS Version)**: This is the engine that runs our project.
+    -   Download it here: [nodejs.org](https://nodejs.org/) (Choose the "LTS" version).
+2.  **Git**: A tool to manage and download the code.
+    -   Download it here: [git-scm.com](https://git-scm.com/)
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps in order to get the app running on your machine:
+
+### Step 1: Clone the Project
+Open your terminal (Terminal on Mac, Command Prompt or PowerShell on Windows) and run the following command to download the code to your machine:
+
+```bash
+git clone https://github.com/FirstStepTechnologies/vina_frontend.git
+```
+
+Then, move into the project folder:
+
+```bash
+cd vina_frontend
+```
+
+### Step 2: Install Dependencies
+A modern web project relies on many smaller "packages" (libraries). Run this command to download all the necessary tools specified in our project:
+
+```bash
+npm install
+```
+
+### Step 3: Run the Development Server
+Now, let's start the app! Run:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You should see a message saying `Ready in ...ms`. Now, open your browser and go to:
+👉 **[http://localhost:3000](http://localhost:3000)**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📂 Project Structure (Where to find things)
 
-## Learn More
+As a new developer, here is a quick map of the project:
 
-To learn more about Next.js, take a look at the following resources:
+-   `src/app/`: This is where all the **Pages** of the app live.
+    -   `page.tsx`: The Welcome screen.
+    -   `dashboard/`: The winding course map.
+    -   `lesson/[id]/`: The video player screen.
+-   `src/components/ui/`: Reusable interface elements like **Buttons** and **Cards**.
+-   `src/contexts/`: This is where we handle the "Brain" of the app (saving your name, tracking which lessons you finished).
+-   `src/lib/api/`: Handles how we talk to the backend (or currently, how we use "mock" fake data for testing).
+-   `public/assets/`: All the images and videos used in the app.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ⌨️ Helpful Commands
 
-## Deploy on Vercel
+-   `npm run dev`: Starts the app for development (auto-reloads when you save a file).
+-   `npm run build`: Prepares the app for a real, live website (optimizes everything).
+-   `git status`: Shows you which files you have changed.
+-   `git add .` followed by `git commit -m "my changes"`: Saves your work locally.
+-   `git push`: Sends your saved work to the GitHub website.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📚 Further Reading
+
+We have created specialized documents for your transition:
+
+1.  **[HANDOVER.md](./HANDOVER.md)**: Read this first! It explains the architecture and how the "magic" (like the winding S-curve) works.
+2.  **[FUTURE_ENHANCEMENTS.md](./FUTURE_ENHANCEMENTS.md)**: A list of "To-Do" features that we haven't built yet.
+3.  **[BACKEND_API_SPEC.md](./BACKEND_API_SPEC.md)**: Details on how the app will eventually talk to the real backend.
+
+---
+
+### 💡 Pro Tip for Mobile View
+Since this is a mobile-first app, it's best to view it in "Mobile Mode" in your browser:
+1. Right-click anywhere on the page and select **Inspect**.
+2. Click the **Device Toggle** icon (looks like a small phone/tablet icon) at the top of the inspector panel.
+3. Select a device like "iPhone 12/13" from the dropdown.

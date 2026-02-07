@@ -14,6 +14,7 @@ export default function Dashboard() {
     const { progress, isLoading: progressLoading } = useProgress();
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const activeNodeRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Redirect if not logged in
@@ -41,37 +42,70 @@ export default function Dashboard() {
 
     if (userLoading || progressLoading) return <div className="min-h-screen pt-20 text-center">Loading...</div>;
 
+    // --- Layout Constants ---
+    const ROW_HEIGHT = 120; // Vertical spacing
+    const AMPLITUDE = 80;   // Horizontal sway
+    const CENTER_X = 50;    // Percent
+
+    // Helper to calculate position for a node index
+    const getNodePosition = (index: number) => {
+        const y = index * ROW_HEIGHT + 60; // Add top padding
+        // Sine wave for x
+        const xOffset = Math.sin(index * 0.8) * AMPLITUDE;
+
+        return { x: `calc(${CENTER_X}% + ${xOffset}px)`, y, xOffset };
+    };
+
+    // Generate SVG path string
+    const generatePath = () => {
+        if (lessons.length === 0) return "";
+        let path = "";
+
+        // We assume a base width of 400 for SVG calculation
+        // Center is 200
+
+        lessons.forEach((_, i) => {
+            const pos = getNodePosition(i);
+            const svgX = 200 + pos.xOffset;
+            const svgY = pos.y + 40; // Center of node (roughly, node is 80px tall)
+
+            if (i === 0) {
+                path += `M ${svgX} ${svgY}`;
+            } else {
+                const prevPos = getNodePosition(i - 1);
+                const prevSvgX = 200 + prevPos.xOffset;
+                const prevSvgY = prevPos.y + 40;
+
+                // Bezier curve control points
+                const cp1x = prevSvgX;
+                const cp1y = prevSvgY + (ROW_HEIGHT / 2);
+                const cp2x = svgX;
+                const cp2y = svgY - (ROW_HEIGHT / 2);
+
+                path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${svgX} ${svgY}`;
+            }
+        });
+        return path;
+    };
+
     const getLessonState = (lesson: Lesson) => {
         if (progress.completedLessons.includes(lesson.lessonId)) return "completed";
-
-        // Check if prerequisites are met
         const prereqsMet = lesson.prerequisites.length === 0 ||
             lesson.prerequisites.every(id => progress.completedLessons.includes(id));
 
-        // Also check if it's the specific "current" lesson derived from progress
-        // For simplicity: if not completed and prereqs met, it's active.
-        // If multiple meet this (e.g. strict linear), usually only first one is active.
-        // We can use the 'next available' logic
-
         if (prereqsMet) {
-            // Is this the *first* incomplete lesson?
             const firstIncomplete = lessons.find(l => !progress.completedLessons.includes(l.lessonId));
             if (firstIncomplete?.lessonId === lesson.lessonId) return "active";
-
-            // If later than first incomplete but prereqs met (rare in linear course), technically unlocked but we focus user on one.
-            // Let's treat it as locked visually or strictly check against currentLessonId
-            return "locked";
         }
-
         return "locked";
     };
 
-    return (
-        <div className="flex flex-col min-h-screen relative">
-            {/* Background Mesh (Global style handles it, but we can add specific accent blobs if needed) */}
+    const totalHeight = lessons.length * ROW_HEIGHT + 150;
 
-            {/* Course Header */}
-            <div className="pt-8 px-6 pb-6 glass-panel sticky top-0 z-20 border-b border-white/50 backdrop-blur-xl">
+    return (
+        <div className="flex flex-col min-h-screen relative bg-gray-50/50">
+            {/* Header */}
+            <div className="pt-8 px-6 pb-6 glass-panel sticky top-0 z-50 border-b border-white/50 backdrop-blur-xl">
                 <div className="flex justify-between items-end mb-4">
                     <div>
                         <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-teal-600">
@@ -80,7 +114,6 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-500 font-medium">Your learning path</p>
                     </div>
                 </div>
-
                 <div className="mt-2 flex flex-col gap-2">
                     <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
                         <span>Progress</span>
@@ -97,21 +130,59 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Map Content */}
-            <div className="flex-1 px-6 py-10 relative">
-                {/* Vertical Path Line */}
-                <div className="absolute left-1/2 top-0 bottom-0 w-1.5 bg-gradient-to-b from-teal-100 via-blue-100 to-teal-100 -translate-x-1/2 -z-0 rounded-full" />
+            {/* Scrollable Map Area */}
+            <div className="flex-1 relative overflow-hidden" ref={containerRef}>
+                <div className="relative w-full max-w-md mx-auto" style={{ height: totalHeight }}>
 
-                <div className="space-y-12 relative z-10">
+                    {/* S-Curve Path SVG */}
+                    <svg
+                        className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
+                        viewBox={`0 0 400 ${totalHeight}`}
+                        preserveAspectRatio="xMidYMin slice"
+                    >
+                        {/* Shadow path for depth */}
+                        <path
+                            d={generatePath()}
+                            fill="none"
+                            stroke="rgba(0,0,0,0.1)"
+                            strokeWidth="12"
+                            strokeLinecap="round"
+                            className="translate-y-1"
+                        />
+                        {/* Main path */}
+                        <path
+                            d={generatePath()}
+                            fill="none"
+                            stroke="url(#pathGradient)"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            strokeDasharray="12 12"
+                            className="animate-[dash_60s_linear_infinite]"
+                        />
+                        <defs>
+                            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#14B8A6" />
+                                <stop offset="50%" stopColor="#3B82F6" />
+                                <stop offset="100%" stopColor="#8B5CF6" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+
+                    {/* Nodes */}
                     {lessons.map((lesson, index) => {
                         const state = getLessonState(lesson);
+                        const pos = getNodePosition(index);
                         const isLast = index === lessons.length - 1;
 
                         return (
                             <div
                                 key={lesson.lessonId}
                                 ref={state === 'active' ? activeNodeRef : null}
-                                className="flex justify-center"
+                                className="absolute transform -translate-x-1/2 flex flex-col items-center justify-center w-[120px]"
+                                style={{
+                                    left: pos.x,
+                                    top: pos.y,
+                                }}
                             >
                                 <CourseMapNode
                                     lesson={lesson}
@@ -119,6 +190,12 @@ export default function Dashboard() {
                                     onClick={() => router.push(`/lesson/${lesson.lessonId}`)}
                                     isLast={isLast}
                                 />
+                                {/* Floating decoration occasionally */}
+                                {index % 4 === 0 && index !== 0 && (
+                                    <div className={`absolute ${index % 2 === 0 ? '-left-12' : '-right-12'} top-4 text-2xl -z-10 opacity-50 animate-float`}>
+                                        {['☁️', '✨', '🚀', '🌟'][index % 4]}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
