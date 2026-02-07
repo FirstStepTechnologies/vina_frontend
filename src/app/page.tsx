@@ -31,7 +31,7 @@ export default function WelcomeScreen() {
         <div className="mb-10 animate-float">
           <div className="relative w-40 h-40 mx-auto filter drop-shadow-glow">
             <Image
-              src="/assets/Vina_logo_transparent_bg.png"
+              src="/assets/Vina Logo.png"
               alt="Vina Logo"
               fill
               className="object-contain"
@@ -41,17 +41,19 @@ export default function WelcomeScreen() {
         </div>
 
         <div className="space-y-4 mb-12 animate-slide-up">
-          <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
+          <h1 className="text-6xl font-black tracking-tighter text-gray-900">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600">
               Vina
             </span>
           </h1>
-          <h2 className="text-2xl font-bold text-gray-800">
-            Learn LLMs Your Way
-          </h2>
-          <p className="text-gray-500 text-lg max-w-xs mx-auto leading-relaxed">
-            Fast, adaptive video lessons customized for your profession.
-          </p>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-black uppercase tracking-[0.3em] text-teal-600/80">
+              Learning that Listens
+            </h2>
+            <p className="text-gray-500 text-lg max-w-[280px] mx-auto leading-tight font-medium">
+              The AI tutor that adapts to your professional pace.
+            </p>
+          </div>
         </div>
 
         <div className="w-full animate-slide-up" style={{ animationDelay: '0.2s' }}>

@@ -7,6 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import { ApiService } from "@/lib/api/service";
 import { Lesson } from "@/lib/api/types";
 import { CourseMapNode } from "./components/CourseMapNode";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -43,17 +44,18 @@ export default function Dashboard() {
     if (userLoading || progressLoading) return <div className="min-h-screen pt-20 text-center">Loading...</div>;
 
     // --- Layout Constants ---
-    const ROW_HEIGHT = 120; // Vertical spacing
-    const AMPLITUDE = 80;   // Horizontal sway
-    const CENTER_X = 50;    // Percent
+    const ROW_HEIGHT = 140; // Vertical spacing
+    const AMPLITUDE = 22;   // Horizontal sway in % (Total width 100%)
+    const CENTER_X = 50;    // Center in %
 
     // Helper to calculate position for a node index
     const getNodePosition = (index: number) => {
-        const y = index * ROW_HEIGHT + 60; // Add top padding
-        // Sine wave for x
+        const y = index * ROW_HEIGHT + 100;
+        // Sine wave for xOffset in %
         const xOffset = Math.sin(index * 0.8) * AMPLITUDE;
+        const x = CENTER_X + xOffset;
 
-        return { x: `calc(${CENTER_X}% + ${xOffset}px)`, y, xOffset };
+        return { x: `${x}%`, y, xOffset };
     };
 
     // Generate SVG path string
@@ -61,28 +63,22 @@ export default function Dashboard() {
         if (lessons.length === 0) return "";
         let path = "";
 
-        // We assume a base width of 400 for SVG calculation
-        // Center is 200
-
         lessons.forEach((_, i) => {
             const pos = getNodePosition(i);
-            const svgX = 200 + pos.xOffset;
-            const svgY = pos.y + 40; // Center of node (roughly, node is 80px tall)
+            const svgX = CENTER_X + pos.xOffset;
+            const svgY = pos.y + 40; // Center of node
 
             if (i === 0) {
                 path += `M ${svgX} ${svgY}`;
             } else {
                 const prevPos = getNodePosition(i - 1);
-                const prevSvgX = 200 + prevPos.xOffset;
+                const prevSvgX = CENTER_X + prevPos.xOffset;
                 const prevSvgY = prevPos.y + 40;
 
-                // Bezier curve control points
-                const cp1x = prevSvgX;
                 const cp1y = prevSvgY + (ROW_HEIGHT / 2);
-                const cp2x = svgX;
                 const cp2y = svgY - (ROW_HEIGHT / 2);
 
-                path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${svgX} ${svgY}`;
+                path += ` C ${prevSvgX} ${cp1y}, ${svgX} ${cp2y}, ${svgX} ${svgY}`;
             }
         });
         return path;
@@ -103,28 +99,32 @@ export default function Dashboard() {
     const totalHeight = lessons.length * ROW_HEIGHT + 150;
 
     return (
-        <div className="flex flex-col min-h-screen relative bg-gray-50/50">
+        <div className="flex flex-col min-h-screen relative bg-[#f0fdfa]">
+            {/* Background Aurora Mesh - Light & Airy */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#ccfbf1_0%,transparent_50%),radial-gradient(circle_at_80%_80%,#99f6e420_0%,transparent_50%),radial-gradient(circle_at_50%_50%,#fff_0%,#f0fdfa_100%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[url('/assets/grid-pattern.svg')] opacity-[0.2] pointer-events-none" />
+
             {/* Header */}
-            <div className="pt-8 px-6 pb-6 glass-panel sticky top-0 z-50 border-b border-white/50 backdrop-blur-xl">
+            <div className="pt-8 px-6 pb-6 sticky top-0 z-50 border-b border-teal-100/50 backdrop-blur-2xl">
                 <div className="flex justify-between items-end mb-4">
                     <div>
-                        <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-teal-600">
+                        <h1 className="text-2xl font-black text-teal-900 drop-shadow-sm">
                             LLM Foundations
                         </h1>
-                        <p className="text-sm text-gray-500 font-medium">Your learning path</p>
+                        <p className="text-sm text-teal-600/70 font-medium">Your learning path</p>
                     </div>
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
-                    <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <div className="flex justify-between text-xs font-black text-teal-700/80 uppercase tracking-[0.2em]">
                         <span>Progress</span>
                         <span>{Math.round((progress.completedLessons.length / 17) * 100)}%</span>
                     </div>
-                    <div className="w-full h-3 bg-gray-100/80 rounded-full overflow-hidden shadow-inner border border-gray-100">
+                    <div className="w-full h-2 bg-teal-900/5 rounded-full overflow-hidden border border-teal-100/50">
                         <div
-                            className="h-full bg-gradient-to-r from-teal-400 to-blue-500 transition-all duration-1000 ease-out relative"
+                            className="h-full bg-gradient-to-r from-teal-400 via-blue-400 to-teal-400 transition-all duration-1000 ease-out relative"
                             style={{ width: `${(progress.completedLessons.length / 17) * 100}%` }}
                         >
-                            <div className="absolute inset-0 bg-white/20 animate-pulse-slow" />
+                            <div className="absolute inset-0 bg-white/30 animate-pulse-slow" />
                         </div>
                     </div>
                 </div>
@@ -134,38 +134,54 @@ export default function Dashboard() {
             <div className="flex-1 relative overflow-hidden" ref={containerRef}>
                 <div className="relative w-full max-w-md mx-auto" style={{ height: totalHeight }}>
 
-                    {/* S-Curve Path SVG */}
+                    {/* Magical Path SVG */}
                     <svg
                         className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
-                        viewBox={`0 0 400 ${totalHeight}`}
-                        preserveAspectRatio="xMidYMin slice"
+                        viewBox={`0 0 100 ${totalHeight}`}
+                        preserveAspectRatio="none"
                     >
-                        {/* Shadow path for depth */}
-                        <path
-                            d={generatePath()}
-                            fill="none"
-                            stroke="rgba(0,0,0,0.1)"
-                            strokeWidth="12"
-                            strokeLinecap="round"
-                            className="translate-y-1"
-                        />
-                        {/* Main path */}
+                        <defs>
+                            <filter id="fuzzy" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+                            </filter>
+                            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.4" />
+                                <stop offset="50%" stopColor="#3B82F6" stopOpacity="0.3" />
+                                <stop offset="100%" stopColor="#2DD4BF" stopOpacity="0.4" />
+                            </linearGradient>
+                        </defs>
+
+                        {/* Wide Mist - Aurora Glow (Light Mode) */}
                         <path
                             d={generatePath()}
                             fill="none"
                             stroke="url(#pathGradient)"
-                            strokeWidth="8"
+                            strokeWidth="15"
                             strokeLinecap="round"
-                            strokeDasharray="12 12"
-                            className="animate-[dash_60s_linear_infinite]"
+                            filter="url(#fuzzy)"
+                            className="opacity-30"
                         />
-                        <defs>
-                            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#14B8A6" />
-                                <stop offset="50%" stopColor="#3B82F6" />
-                                <stop offset="100%" stopColor="#8B5CF6" />
-                            </linearGradient>
-                        </defs>
+
+                        {/* Vibrant Core */}
+                        <path
+                            d={generatePath()}
+                            fill="none"
+                            stroke="url(#pathGradient)"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            className="opacity-50"
+                        />
+
+                        {/* Sparkling Light Streak */}
+                        <path
+                            d={generatePath()}
+                            fill="none"
+                            stroke="#0D9488"
+                            strokeWidth="0.5"
+                            strokeLinecap="round"
+                            strokeDasharray="1 10"
+                            className="opacity-40 animate-[sparkle_20s_linear_infinite]"
+                        />
                     </svg>
 
                     {/* Nodes */}
@@ -178,7 +194,7 @@ export default function Dashboard() {
                             <div
                                 key={lesson.lessonId}
                                 ref={state === 'active' ? activeNodeRef : null}
-                                className="absolute transform -translate-x-1/2 flex flex-col items-center justify-center w-[120px]"
+                                className="absolute transform -translate-x-1/2 flex flex-col items-center justify-start w-[80px]"
                                 style={{
                                     left: pos.x,
                                     top: pos.y,
@@ -189,11 +205,31 @@ export default function Dashboard() {
                                     state={state}
                                     onClick={() => router.push(`/lesson/${lesson.lessonId}`)}
                                     isLast={isLast}
+                                    labelPosition={pos.xOffset > 0 ? "left" : "right"}
                                 />
-                                {/* Floating decoration occasionally */}
-                                {index % 4 === 0 && index !== 0 && (
-                                    <div className={`absolute ${index % 2 === 0 ? '-left-12' : '-right-12'} top-4 text-2xl -z-10 opacity-50 animate-float`}>
-                                        {['☁️', '✨', '🚀', '🌟'][index % 4]}
+                                {/* Scaterred Clouds and Decorations */}
+                                {index % 2 === 0 && (
+                                    <div
+                                        className={cn(
+                                            "absolute -z-10 opacity-30 animate-float pointer-events-none",
+                                            index % 4 === 0 ? "-left-24 text-4xl" : "-right-24 text-3xl",
+                                            index % 3 === 0 ? "top-0" : "top-10"
+                                        )}
+                                        style={{ animationDelay: `${index * 0.5}s`, animationDuration: `${5 + (index % 3)}s` }}
+                                    >
+                                        {['☁️', '☁️', '✨', '☁️'][index % 4]}
+                                    </div>
+                                )}
+                                {index % 3 === 0 && (
+                                    <div
+                                        className={cn(
+                                            "absolute -z-10 opacity-20 animate-float pointer-events-none",
+                                            index % 2 === 0 ? "-right-32 text-6xl" : "-left-32 text-5xl",
+                                            "top-20"
+                                        )}
+                                        style={{ animationDelay: `${index * 0.7}s`, animationDuration: `${7 + (index % 2)}s` }}
+                                    >
+                                        ☁️
                                     </div>
                                 )}
                             </div>
