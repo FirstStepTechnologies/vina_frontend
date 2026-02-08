@@ -1,61 +1,164 @@
-import { DailyPractice, Lesson, QuizQuestion, VinaUser } from "./types";
-import { MOCK_LESSONS, MOCK_QUIZ_QUESTIONS, MOCK_PRE_ASSESSMENT_QUESTIONS } from "./mock-data";
+import { Lesson, QuizQuestion, VinaUser, Token } from "./types";
 
-const DELAY_MS = 800; // Simulate network latency
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const generateUUID = () => {
-    // Check if crypto.randomUUID exists (secure context HTTPS or localhost)
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID();
-    }
-    // Fallback for insecure contexts (HTTP on LAN)
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export class ApiService {
-    static async createUserProfile(profession: string, dailyGoalMinutes: number = 10): Promise<VinaUser> {
-        await sleep(DELAY_MS);
-        return {
-            userId: generateUUID(),
-            profession,
-            dailyGoalMinutes,
-            createdAt: new Date().toISOString(),
-        };
+    private static getAuthHeader(): Record<string, string> {
+        if (typeof window === "undefined") return {};
+        const token = localStorage.getItem("vina_token");
+        return token ? { "Authorization": `Bearer ${token}` } : {};
+    }
+
+    private static async handleResponse<T>(response: Response): Promise<T> {
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: "Unknown error" }));
+            throw new Error(error.detail || response.statusText);
+        }
+        return response.json();
+    }
+
+    static async register(email: string, fullName: string): Promise<Token> {
+        // For Hackathon, we use a fixed password or generate one
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: "password123", fullName }),
+        });
+        const data = await this.handleResponse<Token>(response);
+        if (data.access_token) {
+            localStorage.setItem("vina_token", data.access_token);
+        }
+        return data;
+    }
+
+    static async login(email: string): Promise<Token> {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: "password123" }),
+        });
+        const data = await this.handleResponse<Token>(response);
+        if (data.access_token) {
+            localStorage.setItem("vina_token", data.access_token);
+        }
+        return data;
+    }
+
+    static async getProfile(): Promise<VinaUser> {
+        const response = await fetch(`${API_BASE_URL}/user/profile`, {
+            headers: this.getAuthHeader(),
+        });
+        return this.handleResponse<VinaUser>(response);
+    }
+
+    static async updateProfile(updates: any): Promise<VinaUser> {
+        const response = await fetch(`${API_BASE_URL}/user/profile`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getAuthHeader(),
+            },
+            body: JSON.stringify(updates),
+        });
+        return this.handleResponse<VinaUser>(response);
     }
 
     static async getCourseMap(): Promise<Lesson[]> {
-        await sleep(DELAY_MS);
-        return MOCK_LESSONS; // Return all 17 lessons (mocked as subset for now)
+        const response = await fetch(`${API_BASE_URL}/course/map`, {
+            headers: this.getAuthHeader(),
+        });
+        return this.handleResponse<Lesson[]>(response);
     }
 
-    static async getLesson(lessonId: string): Promise<Lesson | undefined> {
-        await sleep(DELAY_MS);
-        return MOCK_LESSONS.find((l) => l.lessonId === lessonId);
+    static async getLesson(lessonId: string, difficulty: number = 3): Promise<Lesson> {
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}?difficulty=${difficulty}`, {
+            headers: this.getAuthHeader(),
+        });
+        return this.handleResponse<Lesson>(response);
     }
 
-    static async getQuiz(lessonId: string): Promise<QuizQuestion[]> {
-        await sleep(DELAY_MS);
-        return MOCK_QUIZ_QUESTIONS[lessonId] || [];
+    static async completeLesson(lessonId: string): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/user/progress/lesson/${lessonId}/complete`, {
+            method: "POST",
+            headers: this.getAuthHeader(),
+        });
+        return this.handleResponse<any>(response);
     }
 
     static async getPreAssessment(): Promise<QuizQuestion[]> {
-        await sleep(DELAY_MS);
-        return MOCK_PRE_ASSESSMENT_QUESTIONS;
+        const response = await fetch(`${API_BASE_URL}/assessment/pre-quiz`, {
+            headers: this.getAuthHeader(),
+        });
+        const data = await this.handleResponse<any>(response);
+        return data.questions || [];
     }
 
     static async submitPreAssessment(answers: any[]): Promise<{ startingLesson: string; score: number }> {
-        await sleep(DELAY_MS);
-        // Mock logic: randomly place user or based on score
-        // content placement logic would go here
-        return {
-            startingLesson: "l01_what_llms_are",
-            score: 5
-        };
+        const response = await fetch(`${API_BASE_URL}/assessment/submit`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getAuthHeader(),
+            },
+            body: JSON.stringify({ answers }),
+        });
+        return this.handleResponse<{ startingLesson: string; score: number }>(response);
+    }
+
+    static async syncProgress(minutes: number): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/user/progress/sync`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getAuthHeader(),
+            },
+            body: JSON.stringify({ minutes_added: minutes }),
+        });
+        return this.handleResponse<any>(response);
+    }
+
+    static async adaptLesson(lessonId: string, adaptationType: string, currentDifficulty: number): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/lessons/adapt`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getAuthHeader(),
+            },
+            body: JSON.stringify({ lessonId, adaptationType, currentDifficulty }),
+        });
+        return this.handleResponse<any>(response);
+    }
+
+    static async getQuiz(lessonId: string): Promise<QuizQuestion[]> {
+        const storedUser = localStorage.getItem("vina_user");
+        const userId = storedUser ? JSON.parse(storedUser).id : "";
+
+        const response = await fetch(`${API_BASE_URL}/quizzes/${lessonId}?userId=${userId}`, {
+            headers: this.getAuthHeader(),
+        });
+        const data = await this.handleResponse<any>(response);
+        return data.questions || [];
+    }
+
+    static async submitQuiz(lessonId: string, answers: any[]): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/quizzes/submit`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getAuthHeader(),
+            },
+            body: JSON.stringify({ lessonId, answers }),
+        });
+        return this.handleResponse<any>(response);
+    }
+
+    // Helper for finding/creating a user profile during onboarding
+    static async ensureUser(fullName: string): Promise<Token> {
+        const email = `${fullName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
+        try {
+            return await this.login(email);
+        } catch (e) {
+            return await this.register(email, fullName);
+        }
     }
 }

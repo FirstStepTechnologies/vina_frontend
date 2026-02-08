@@ -3,28 +3,19 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { VinaProgress } from "@/lib/api/types";
 import { useUser } from "./UserContext";
+import { ApiService } from "@/lib/api/service";
 
-// Default initial state matching PRD
 const DEFAULT_PROGRESS: VinaProgress = {
-    currentLessonId: "l01_what_llms_are",
-    completedLessons: [],
-    lessonScores: {},
-    currentDifficulty: 3, // Default difficulty (1-5 scale)
-    totalPoints: 0,
+    current_lesson_id: "l01_what_llms_are",
+    completed_lessons: [],
     diamonds: 0,
     streak: 0,
-    minutesToday: 0,
-    minutesThisWeek: 0,
-    lastActiveDate: new Date().toISOString().split("T")[0],
-    practicePointsToday: 0,
-    lastPracticeDate: "",
-    totalLearningTimeSeconds: 0,
-    preAssessmentCompleted: false,
-    preAssessmentScore: 0,
-    startingLesson: "l01_what_llms_are",
-    preAssessmentDate: "",
-    tourCompleted: false,
-    currentTourStep: 0,
+    minutes_today: 0,
+    minutes_this_week: 0,
+    minutes_total: 0,
+    total_learning_time_seconds: 0,
+    pre_assessment_completed: false,
+    starting_lesson: "l01_what_llms_are",
 };
 
 interface ProgressContextType {
@@ -32,11 +23,9 @@ interface ProgressContextType {
     isLoading: boolean;
     updateProgress: (updates: Partial<VinaProgress>) => void;
     unlockLesson: (lessonId: string) => void;
-    completeLesson: (lessonId: string, score: number, total: number) => void;
-    addMinutes: (minutes: number) => void;
+    completeLesson: (lessonId: string) => Promise<void>;
+    addMinutes: (minutes: number) => Promise<void>;
     addDiamonds: (amount: number) => void;
-    incrementStreak: () => void;
-    markGoalAchieved: (date: string) => void;
     resetProgress: () => void;
 }
 
@@ -47,120 +36,81 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useUser();
 
-    // Initial mount: load from LocalStorage
     useEffect(() => {
-        const stored = localStorage.getItem("vina_progress");
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                setProgress({ ...DEFAULT_PROGRESS, ...parsed });
-            } catch (e) {
-                console.error("Failed to parse progress from local storage", e);
+        const fetchProgress = async () => {
+            if (user && user.progress) {
+                setProgress(user.progress);
+            } else {
+                const stored = localStorage.getItem("vina_progress");
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        setProgress({ ...DEFAULT_PROGRESS, ...parsed });
+                    } catch (e) {
+                        console.error("Failed to parse progress", e);
+                    }
+                }
             }
-        }
-        setIsLoading(false);
-    }, []);
+            setIsLoading(false);
+        };
+        fetchProgress();
+    }, [user]);
 
-    // Sync to LocalStorage on every state change
     useEffect(() => {
         if (!isLoading) {
             localStorage.setItem("vina_progress", JSON.stringify(progress));
         }
     }, [progress, isLoading]);
 
-    // Goal Reach Logic: Automated Tracking
-    useEffect(() => {
-        if (!user) return;
-
-        const today = new Date().toISOString().split("T")[0];
-        const goalMins = user.dailyGoalMinutes || 10;
-
-        if (progress.minutesToday >= goalMins && !progress.dailyGoalHistory?.[today]) {
-            markGoalAchieved(today);
-            // Resolution Bonus: 100 Diamonds for hitting the daily goal!
-            addDiamonds(100);
-        }
-    }, [progress.minutesToday, user, progress.dailyGoalHistory]);
-
     const updateProgress = (updates: Partial<VinaProgress>) => {
         setProgress(prev => ({ ...prev, ...updates }));
     };
 
     const unlockLesson = (lessonId: string) => {
-        setProgress(prev => ({ ...prev, currentLessonId: lessonId }));
+        setProgress(prev => ({ ...prev, current_lesson_id: lessonId }));
     };
 
-    const completeLesson = (lessonId: string, score: number, total = 3) => {
-        setProgress(prev => {
-            const today = new Date().toISOString().split("T")[0];
-            const newCompleted = prev.completedLessons.includes(lessonId)
-                ? prev.completedLessons
-                : [...prev.completedLessons, lessonId];
-
-            const newScores = {
-                ...prev.lessonScores,
-                [lessonId]: {
-                    score,
-                    total,
-                    passedAt: new Date().toISOString(),
-                },
-            };
-
-            // Streak logic
-            let newStreak = prev.streak;
-            const lastActive = new Date(prev.lastActiveDate);
-            const currentDate = new Date(today);
-            const dayDiff = Math.floor((currentDate.getTime() - lastActive.getTime()) / (1000 * 3600 * 24));
-
-            if (dayDiff === 1) {
-                newStreak += 1;
-            } else if (dayDiff > 1) {
-                newStreak = 1;
-            } else if (prev.streak === 0) {
-                newStreak = 1;
+    const completeLesson = async (lessonId: string) => {
+        try {
+            const result = await ApiService.completeLesson(lessonId);
+            // Result is full progress or summary from backend
+            if (result.progress) {
+                setProgress(result.progress);
+            } else {
+                // Fallback locally if backend returns something else
+                setProgress(prev => ({
+                    ...prev,
+                    completed_lessons: prev.completed_lessons.includes(lessonId)
+                        ? prev.completed_lessons
+                        : [...prev.completed_lessons, lessonId]
+                }));
             }
-
-            return {
-                ...prev,
-                completedLessons: newCompleted,
-                lessonScores: newScores,
-                streak: newStreak,
-                lastActiveDate: today,
-            };
-        });
+        } catch (e) {
+            console.error("Failed to complete lesson on server", e);
+        }
     };
 
-    const addMinutes = (minutes: number) => {
+    const addMinutes = async (minutes: number) => {
         setProgress(prev => ({
             ...prev,
-            minutesToday: prev.minutesToday + minutes,
-            minutesThisWeek: prev.minutesThisWeek + minutes,
-            totalLearningTimeSeconds: prev.totalLearningTimeSeconds + (minutes * 60)
+            minutes_today: prev.minutes_today + minutes,
+            total_learning_time_seconds: prev.total_learning_time_seconds + (minutes * 60)
         }));
+
+        try {
+            const updatedProgress = await ApiService.syncProgress(minutes);
+            if (updatedProgress) {
+                setProgress(updatedProgress);
+            }
+        } catch (e) {
+            console.error("Failed to sync minutes to server", e);
+        }
     };
 
     const addDiamonds = (amount: number) => {
         setProgress(prev => ({
             ...prev,
             diamonds: prev.diamonds + amount,
-            totalPoints: prev.totalPoints + amount
-        }));
-    };
-
-    const incrementStreak = () => {
-        setProgress(prev => ({
-            ...prev,
-            streak: prev.streak + 1
-        }));
-    };
-
-    const markGoalAchieved = (date: string) => {
-        setProgress(prev => ({
-            ...prev,
-            dailyGoalHistory: {
-                ...(prev.dailyGoalHistory || {}),
-                [date]: true
-            }
         }));
     };
 
@@ -179,8 +129,6 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                 completeLesson,
                 addMinutes,
                 addDiamonds,
-                incrementStreak,
-                markGoalAchieved,
                 resetProgress,
             }}
         >

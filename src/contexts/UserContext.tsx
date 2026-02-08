@@ -1,14 +1,15 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { VinaUser } from "@/lib/api/types";
+import { VinaUser, Token } from "@/lib/api/types";
+import { ApiService } from "@/lib/api/service";
 
 interface UserContextType {
     user: VinaUser | null;
     isLoading: boolean;
-    login: (newUser: VinaUser) => void;
+    login: (token: Token) => void;
     logout: () => void;
-    updateUser: (updates: Partial<VinaUser>) => void;
+    updateUser: (updates: any) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -18,36 +19,45 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Check LocalStorage on mount
-        const stored = localStorage.getItem("vina_user");
-        if (stored) {
-            try {
-                setUser(JSON.parse(stored));
-            } catch (e) {
-                console.error("Failed to parse user from local storage", e);
+        const fetchInitialUser = async () => {
+            const token = localStorage.getItem("vina_token");
+            const storedUser = localStorage.getItem("vina_user");
+
+            if (token && storedUser) {
+                try {
+                    setUser(JSON.parse(storedUser));
+                    // Optionally refresh profile from server
+                    const freshUser = await ApiService.getProfile();
+                    setUser(freshUser);
+                    localStorage.setItem("vina_user", JSON.stringify(freshUser));
+                } catch (e) {
+                    console.error("Session invalid or server error", e);
+                    // logout() if token expired?
+                }
             }
-        }
-        setIsLoading(false);
+            setIsLoading(false);
+        };
+
+        fetchInitialUser();
     }, []);
 
-    const login = (newUser: VinaUser) => {
-        setUser(newUser);
-        localStorage.setItem("vina_user", JSON.stringify(newUser));
+    const login = (token: Token) => {
+        setUser(token.user);
+        localStorage.setItem("vina_token", token.access_token);
+        localStorage.setItem("vina_user", JSON.stringify(token.user));
     };
 
     const logout = () => {
         setUser(null);
+        localStorage.removeItem("vina_token");
         localStorage.removeItem("vina_user");
-        localStorage.removeItem("vina_progress"); // Also clear progress on logout
+        localStorage.removeItem("vina_progress");
     };
 
-    const updateUser = (updates: Partial<VinaUser>) => {
-        setUser(prev => {
-            if (!prev) return null;
-            const updated = { ...prev, ...updates };
-            localStorage.setItem("vina_user", JSON.stringify(updated));
-            return updated;
-        });
+    const updateUser = async (updates: any) => {
+        const updatedUser = await ApiService.updateProfile(updates);
+        setUser(updatedUser);
+        localStorage.setItem("vina_user", JSON.stringify(updatedUser));
     };
 
     return (

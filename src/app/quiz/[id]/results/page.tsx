@@ -16,7 +16,7 @@ export default function QuizResultsPage() {
     const params = useParams<{ id: string }>();
     const searchParams = useSearchParams();
     const { user } = useUser();
-    const { progress, completeLesson, addDiamonds, addMinutes, incrementStreak } = useProgress();
+    const { progress, completeLesson, addDiamonds, addMinutes } = useProgress();
 
     const score = parseInt(searchParams.get("score") || "0");
     const total = parseInt(searchParams.get("total") || "3");
@@ -26,28 +26,30 @@ export default function QuizResultsPage() {
     const [celebrationStats, setCelebrationStats] = useState({
         diamondsEarned: 0,
         streakEarned: false,
-        minutesToday: 0,
-        minutesThisWeek: 0,
+        minutes_today: 0,
+        minutes_this_week: 0,
+        minutes_total: 0,
         dailyGoalAchieved: false,
         dailyGoalMinutes: 0
     });
 
     useEffect(() => {
         if (passed) {
-            completeLesson(params.id, score, total);
+            completeLesson(params.id);
 
             // Gamification Logic
             const diamondReward = score * 10;
-            const dailyGoal = user?.dailyGoalMinutes || 10;
-            const reachedGoal = progress.minutesToday >= dailyGoal && (progress.minutesToday - 2) < dailyGoal; // Approximation
+            const dailyGoal = user?.profile?.daily_goal_minutes || 10;
+            const reachedGoal = progress.minutes_today >= dailyGoal && (progress.minutes_today - 2) < dailyGoal; // Approximation
 
             addDiamonds(diamondReward);
 
             setCelebrationStats({
                 diamondsEarned: diamondReward,
-                streakEarned: false, // Don't double count streak here
-                minutesToday: progress.minutesToday,
-                minutesThisWeek: progress.minutesThisWeek,
+                streakEarned: false,
+                minutes_today: progress.minutes_today,
+                minutes_this_week: progress.minutes_this_week,
+                minutes_total: progress.minutes_total,
                 dailyGoalAchieved: reachedGoal,
                 dailyGoalMinutes: dailyGoal
             });

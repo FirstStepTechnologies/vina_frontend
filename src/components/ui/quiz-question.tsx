@@ -14,33 +14,32 @@ export function QuizQuestion({ question, onAnswer, allowRetry = false }: QuizQue
     const [selected, setSelected] = useState<string | null>(null);
     const [showFeedback, setShowFeedback] = useState(false);
 
-    const handleSelect = (option: string) => {
+    const handleSelect = (optionText: string, isCorrect: boolean) => {
         if (showFeedback && !allowRetry) return;
 
-        setSelected(option);
-        const isCorrect = option === question.correctAnswer;
+        setSelected(optionText);
         setShowFeedback(true);
 
-        onAnswer(option, isCorrect);
+        onAnswer(optionText, isCorrect);
     };
 
     return (
         <div className="w-full">
             <h3 className="text-xl font-bold text-gray-900 mb-6 leading-relaxed">
-                {question.questionText}
+                {question.text}
             </h3>
 
             <div className="space-y-3">
                 {question.options.map((option) => {
-                    const isSelected = selected === option;
-                    const isCorrectAnswer = option === question.correctAnswer;
+                    const isSelected = selected === option.text;
+                    const isCorrectAnswer = option.is_correct;
 
                     let stateStyles = "border-gray-200 text-gray-700 hover:border-teal-300 hover:bg-gray-50";
 
                     if (showFeedback) {
                         if (isCorrectAnswer) {
                             stateStyles = "border-green-500 bg-green-50 text-green-900";
-                        } else if (isSelected && !isCorrectAnswer) {
+                        } else if (isSelected) {
                             stateStyles = "border-red-500 bg-red-50 text-red-900";
                         } else {
                             stateStyles = "border-gray-100 text-gray-400 opacity-60";
@@ -51,15 +50,15 @@ export function QuizQuestion({ question, onAnswer, allowRetry = false }: QuizQue
 
                     return (
                         <button
-                            key={option}
-                            onClick={() => handleSelect(option)}
+                            key={option.text}
+                            onClick={() => handleSelect(option.text, option.is_correct)}
                             disabled={showFeedback && !allowRetry}
                             className={cn(
                                 "w-full text-left p-4 rounded-xl border-2 transition-all duration-300 text-lg font-medium",
                                 stateStyles
                             )}
                         >
-                            {option}
+                            {option.text}
                         </button>
                     );
                 })}
@@ -68,12 +67,12 @@ export function QuizQuestion({ question, onAnswer, allowRetry = false }: QuizQue
             {showFeedback && (
                 <div className={cn(
                     "mt-6 p-4 rounded-xl border animate-fade-in",
-                    selected === question.correctAnswer
+                    question.options.find(o => o.text === selected)?.is_correct
                         ? "bg-green-100 border-green-200 text-green-800"
                         : "bg-red-50 border-red-100 text-red-800"
                 )}>
                     <p className="font-bold mb-1">
-                        {selected === question.correctAnswer ? "✅ Correct!" : "❌ Not quite"}
+                        {question.options.find(o => o.text === selected)?.is_correct ? "✅ Correct!" : "❌ Not quite"}
                     </p>
                     <p className="text-sm opacity-90 leading-relaxed">
                         {question.explanation}

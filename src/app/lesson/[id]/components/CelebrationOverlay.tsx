@@ -12,8 +12,9 @@ interface CelebrationOverlayProps {
     stats: {
         diamondsEarned: number;
         streakEarned: boolean;
-        minutesToday: number;
-        minutesThisWeek: number;
+        minutes_today: number;
+        minutes_this_week: number;
+        minutes_total: number;
         dailyGoalAchieved: boolean;
         dailyGoalMinutes: number;
     };
@@ -94,16 +95,16 @@ export function CelebrationOverlay({ isOpen, onContinue, buttonText = "Continue 
                             </div>
                             <div>
                                 <p className="text-xs font-black text-teal-600 uppercase tracking-widest">Global Impact</p>
-                                <p className="text-lg font-black text-teal-900 leading-none">{stats.minutesToday} mins learned</p>
+                                <p className="text-lg font-black text-teal-900 leading-none">{stats.minutes_total} mins learned</p>
                             </div>
                         </div>
 
                         <p className="text-sm font-bold text-teal-800/80 leading-relaxed italic">
-                            "You just funded {stats.minutesToday} minutes of education for a child in need. Your learning empowers others."
+                            "You just funded 3 minutes of education for a child in need. Your learning empowers others."
                         </p>
 
                         <div className="mt-4 pt-4 border-t border-teal-200/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-teal-500">
-                            <span>Week total: {stats.minutesThisWeek} mins</span>
+                            <span>Week total: {stats.minutes_this_week} mins</span>
                             <div className="flex gap-1">
                                 {[...Array(5)].map((_, i) => (
                                     <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i < 3 ? "bg-teal-500" : "bg-teal-200")} />

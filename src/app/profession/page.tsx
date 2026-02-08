@@ -24,44 +24,6 @@ const STEPS = [
         ]
     },
     {
-        id: "industry",
-        section: "Role",
-        title: "What industry are you in?",
-        description: "This helps us provide relevant real-world examples.",
-        options: [
-            { label: "Healthcare & Life Sciences", value: "Healthcare", sub: "" },
-            { label: "Finance & Banking", value: "Finance", sub: "" },
-            { label: "Technology & SaaS", value: "Technology", sub: "" },
-            { label: "Energy & Utilities", value: "Energy", sub: "" },
-            { label: "Public Sector", value: "Government", sub: "" },
-            { label: "Retail & Consumer", value: "Retail", sub: "" }
-        ]
-    },
-    {
-        id: "experience",
-        section: "Role",
-        title: "Years of experience?",
-        description: "We'll tailor the depth of technical terminology.",
-        options: [
-            { label: "0-2 years", value: "0-2", sub: "Early Career" },
-            { label: "3-5 years", value: "3-5", sub: "Experienced" },
-            { label: "6-10 years", value: "6-10", sub: "Specialist" },
-            { label: "10+ years", value: "10+", sub: "Expert" }
-        ]
-    },
-    {
-        id: "level",
-        section: "Role",
-        title: "Your leadership level?",
-        description: "Which option best describes your role in the organisation?",
-        options: [
-            { label: "Individual Contributor", value: "IC", sub: "Member of a team" },
-            { label: "Team Lead / Supervisor", value: "Lead", sub: "Leading a small group" },
-            { label: "Middle Management", value: "Mid", sub: "Managing other managers" },
-            { label: "Executive / Senior Leadership", value: "Exec", sub: "Strategic direction" }
-        ]
-    },
-    {
         id: "goal",
         section: "Goal",
         title: "What are you aiming for?",
@@ -73,55 +35,6 @@ const STEPS = [
             { label: "Prepare for job search", value: "job-search", sub: "" },
             { label: "Learn for confidence & capability", value: "confidence", sub: "" },
             { label: "Something specific...", value: "specific", sub: "" }
-        ]
-    },
-    {
-        id: "pace",
-        section: "Pace",
-        title: "How fast should we go?",
-        description: "Your video lessons will adapt their delivery speed and level of detail.",
-        options: [
-            { label: "Steady Pace", value: "steady", sub: "Standard delivery (Recommended)" },
-            { label: "Fast", value: "fast", sub: "Quick summaries, rapid pace" },
-            { label: "Slow", value: "slow", sub: "Clear explanations, moderate pace" },
-            { label: "Minimal detail", value: "minimal", sub: "High-level overview only" },
-            { label: "More depth", value: "depth", sub: "Deep dives and thorough examples" }
-        ]
-    },
-    {
-        id: "commitment",
-        section: "Commitment",
-        title: "Daily commitment?",
-        description: "How much time do you want to commit most days?",
-        options: [
-            { label: "5 minutes", value: "5m", sub: "Micro-learning" },
-            { label: "10 minutes", value: "10m", sub: "Steady growth" },
-            { label: "30 minutes", value: "30m", sub: "Deep focus" },
-            { label: "1-2 hours", value: "1-2h", sub: "Intensive" },
-            { label: "3+ hours", value: "3h+", sub: "Full immersion" }
-        ]
-    },
-    {
-        id: "reminders",
-        section: "Commitment",
-        title: "Stay on track?",
-        description: "Show reminders till you reach your daily learning goal?",
-        type: "toggle",
-        options: [
-            { label: "Yes, keep me focused", value: "yes", sub: "Daily nudges until goal reached" },
-            { label: "No, I'll manage myself", value: "no", sub: "Manual tracking only" }
-        ]
-    },
-    {
-        id: "timeline",
-        section: "Commitment",
-        title: "Target timeline?",
-        description: "We'll pack content to help you achieve your goals within this timeline.",
-        options: [
-            { label: "Up to 1 week", value: "1w", sub: "Urgent sprint" },
-            { label: "Within 1 month", value: "1m", sub: "Focused monthly goal" },
-            { label: "3 months", value: "3m", sub: "Quarterly transformation" },
-            { label: "6 months or more", value: "6m+", sub: "Long-term mastery" }
         ]
     }
 ];
@@ -140,20 +53,6 @@ const SECTION_THEMES: Record<string, { color: string, bg: string, ring: string, 
         ring: "ring-indigo-500/20",
         blob: "bg-indigo-100/40",
         light: "bg-indigo-50"
-    },
-    Pace: {
-        color: "text-amber-600",
-        bg: "bg-amber-600",
-        ring: "ring-amber-500/20",
-        blob: "bg-amber-100/40",
-        light: "bg-amber-50"
-    },
-    Commitment: {
-        color: "text-emerald-600",
-        bg: "bg-emerald-600",
-        ring: "ring-emerald-500/20",
-        blob: "bg-emerald-100/40",
-        light: "bg-emerald-50"
     }
 };
 
@@ -188,28 +87,61 @@ export default function PersonalisationFlow() {
     const submitProfile = async (shouldReset = false) => {
         setIsSubmitting(true);
         try {
-            // Parse daily goal from selections
-            const goalMap: Record<string, number> = {
-                "5m": 5,
-                "10m": 10,
-                "30m": 30,
-                "1-2h": 90,
-                "3h+": 180
+            // Mapping for backend schema
+            const goalMins = 10; // Defaulting for simple 2-screen onboarding
+
+            const industryMap: Record<string, string> = {
+                "Clinical Researcher": "Pharma/Biotech",
+                "HR Manager": "Tech Company",
+                "Marketing Manager": "E-Commerce",
+                "Project Manager": "Software/Tech"
             };
-            const goalMins = goalMap[selections.commitment] || 10;
+
+            const industry = industryMap[selections.role] || "Technology";
 
             if (shouldReset) {
                 resetProgress();
             }
 
-            // Submit complete profile
-            const newUser = await ApiService.createUserProfile(selections.role, goalMins);
+            // 1. Ensure user exists (Silent Register/Login)
+            const fullName = "Vina Learner"; // Default or pull from elsewhere
+            const authData = await ApiService.ensureUser(fullName);
 
-            // Add the full personalisation profile
-            newUser.onboardingResponses = { ...selections };
+            const resolution = selections.goal === 'specific'
+                ? selections.specific_goal
+                : STEPS.find(s => s.id === 'goal')?.options.find(o => o.value === selections.goal)?.label || selections.goal;
 
-            // Save session to prevent redirecting back to splash
-            login(newUser);
+            // 2. Map and Update Profile on server
+            const profileUpdates = {
+                profession: selections.role,
+                industry: industry,
+                experience_level: "Beginner",
+                daily_goal_minutes: goalMins,
+                resolution: resolution,
+                onboarding_responses: {
+                    ...selections,
+                    industry: industry,
+                    experience: "Beginner",
+                    pace: selections.pace || "steady",
+                    reminders: selections.reminders || "yes",
+                    timeline: selections.timeline || "3m"
+                }
+            };
+
+            const updatedProfile = await ApiService.updateProfile(profileUpdates);
+
+            // 3. Merge and Login in context
+            // We merge authData (which has token and base user) with updatedProfile (which has the latest resolution/responses)
+            const finalUser = {
+                ...authData.user,
+                ...updatedProfile,
+                onboardingResponses: profileUpdates.onboarding_responses
+            };
+
+            login({
+                ...authData,
+                user: finalUser as any
+            });
 
             // Navigate directly to dashboard
             router.replace("/dashboard");

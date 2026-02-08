@@ -1,39 +1,38 @@
+export interface Token {
+    access_token: string;
+    token_type: string;
+    user: VinaUser;
+}
+
 export interface VinaUser {
-    userId: string;
-    profession: string;
-    dailyGoalMinutes: number; // Added for gamification
-    resolution?: string;
+    id: string; // Map from backend 'id'
+    email: string;
+    fullName?: string;
+    profile?: VinaProfile;
+    progress?: VinaProgress;
     onboardingResponses?: Record<string, string>;
-    createdAt: string;
+}
+
+export interface VinaProfile {
+    profession: string;
+    industry?: string;
+    experience_level?: string;
+    leadership_level?: string;
+    daily_goal_minutes: number;
+    resolution?: string;
 }
 
 export interface VinaProgress {
-    currentLessonId: string;
-    completedLessons: string[];
-    lessonScores: {
-        [lessonId: string]: {
-            score: number;
-            total: number;
-            passedAt: string;
-        };
-    };
-    currentDifficulty: number;
-    totalPoints: number; // This will act as Diamonds
-    diamonds: number; // Explicit diamonds
+    current_lesson_id: string;
+    completed_lessons: string[];
+    diamonds: number;
     streak: number;
-    minutesToday: number; // Added for gamification
-    minutesThisWeek: number; // Added for gamification
-    lastActiveDate: string;
-    practicePointsToday: number;
-    lastPracticeDate: string;
-    totalLearningTimeSeconds: number;
-    preAssessmentCompleted: boolean;
-    preAssessmentScore: number;
-    startingLesson: string;
-    preAssessmentDate: string;
-    dailyGoalHistory?: Record<string, boolean>;
-    tourCompleted?: boolean;
-    currentTourStep?: number;
+    minutes_today: number;
+    minutes_this_week: number;
+    minutes_total: number;
+    total_learning_time_seconds: number;
+    pre_assessment_completed: boolean;
+    starting_lesson: string;
 }
 
 export interface Lesson {
@@ -44,24 +43,19 @@ export interface Lesson {
     topicGroup: string;
     estimatedDuration: number;
     prerequisites: string[];
+    videoUrl?: string;
+    status?: "locked" | "active" | "completed";
+}
+
+export interface QuizOption {
+    text: string;
+    is_correct: boolean;
 }
 
 export interface QuizQuestion {
     id: string;
-    questionText: string;
-    options: string[];
-    correctAnswer: string; // "A", "B", "C", "D"
+    text: string;
+    options: QuizOption[];
+    correctAnswer: string;
     explanation: string;
-    associatedLesson?: string;
-    difficultyLevel?: number;
-}
-
-export interface DailyPractice {
-    practiceDate: string;
-    questions: QuizQuestion[];
-}
-
-export interface MockApiResponse<T> {
-    data: T;
-    error?: string;
 }

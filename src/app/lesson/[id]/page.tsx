@@ -18,7 +18,7 @@ export default function LessonPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const { user } = useUser();
-    const { progress, addMinutes, addDiamonds, incrementStreak } = useProgress();
+    const { progress, addMinutes, addDiamonds } = useProgress();
 
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [showAdaptMenu, setShowAdaptMenu] = useState(false);
@@ -27,28 +27,28 @@ export default function LessonPage() {
 
     useEffect(() => {
         async function load() {
-            const data = await ApiService.getLesson(params.id);
+            // Use currentDifficulty from progress or default to 3
+            const diff = (progress as any).currentDifficulty || 3;
+            const data = await ApiService.getLesson(params.id, diff);
             if (data) {
                 setLesson(data);
-                if (params.id === "l01_what_llms_are") {
+                if (data.videoUrl) {
+                    setVideoSrc(data.videoUrl);
+                } else if (params.id === "l01_what_llms_are") {
                     setVideoSrc("/assets/lesson1-normal.mp4");
                 }
             }
             else router.replace("/dashboard");
         }
         load();
-    }, [params.id, router]);
+    }, [params.id, router, progress]);
 
-    const handleVideoEnd = () => {
+    const handleVideoEnd = async () => {
         // Calculate minutes based on lesson estimatedDuration (e.g. 5)
         const lessonMins = lesson?.estimatedDuration || 5;
 
-        // Update Learning Time (Impact)
-        addMinutes(lessonMins);
-
-        // Handle Streak
-        const isFirstOfToday = progress.minutesToday === 0;
-        if (isFirstOfToday) incrementStreak();
+        // Update Learning Time (Impact) - This handles sync to server
+        await addMinutes(lessonMins);
 
         // Navigate to Quiz immediately for rewards
         router.push(`/quiz/${params.id}`);

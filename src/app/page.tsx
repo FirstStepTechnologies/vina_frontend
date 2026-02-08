@@ -52,7 +52,7 @@ export default function WelcomeScreen() {
                 Learning that Listens
               </h2>
               <p className="text-gray-500 text-lg max-w-[260px] mx-auto leading-tight font-medium opacity-90">
-                The AI tutor that adapts to your professional pace.
+                The Video tutor that adapts to your professional pace.
               </p>
             </div>
           </div>

@@ -41,7 +41,7 @@ export default function Dashboard() {
                 activeNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 500);
         }
-    }, [lessons, progress.currentLessonId]);
+    }, [lessons, progress.current_lesson_id]);
 
     if (userLoading || progressLoading) return <div className="min-h-screen pt-20 text-center">Loading...</div>;
 
@@ -72,12 +72,12 @@ export default function Dashboard() {
     };
 
     const getLessonState = (lesson: Lesson) => {
-        if (progress.completedLessons.includes(lesson.lessonId)) return "completed";
+        if (progress.completed_lessons.includes(lesson.lessonId)) return "completed";
         const prereqsMet = lesson.prerequisites.length === 0 ||
-            lesson.prerequisites.every(id => progress.completedLessons.includes(id));
+            lesson.prerequisites.every(id => progress.completed_lessons.includes(id));
 
         if (prereqsMet) {
-            const firstIncomplete = lessons.find(l => !progress.completedLessons.includes(l.lessonId));
+            const firstIncomplete = lessons.find(l => !progress.completed_lessons.includes(l.lessonId));
             if (firstIncomplete?.lessonId === lesson.lessonId) return "active";
         }
         return "locked";
@@ -120,19 +120,19 @@ export default function Dashboard() {
                             <div className="w-5 h-5 bg-teal-50 rounded-lg flex items-center justify-center shrink-0">
                                 <Clock size={13} className="text-teal-600" strokeWidth={2.5} />
                             </div>
-                            <span className="text-[12px] font-black text-teal-900 tracking-tight">{progress.minutesToday || 0}m</span>
+                            <span className="text-[12px] font-black text-teal-900 tracking-tight">{progress.minutes_today || 0}m</span>
                         </div>
                     </div>
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
                     <div className="flex justify-between text-xs font-black text-teal-700/80 uppercase tracking-[0.2em]">
                         <span>Progress</span>
-                        <span>{Math.round((progress.completedLessons.length / 17) * 100)}%</span>
+                        <span>{Math.round((progress.completed_lessons.length / 17) * 100)}%</span>
                     </div>
                     <div className="w-full h-2 bg-teal-900/5 rounded-full overflow-hidden border border-teal-100/50">
                         <div
                             className="h-full bg-gradient-to-r from-teal-400 via-blue-400 to-teal-400 transition-all duration-1000 ease-out relative"
-                            style={{ width: `${(progress.completedLessons.length / 17) * 100}%` }}
+                            style={{ width: `${(progress.completed_lessons.length / 17) * 100}%` }}
                         >
                             <div className="absolute inset-0 bg-white/30 animate-pulse-slow" />
                         </div>
