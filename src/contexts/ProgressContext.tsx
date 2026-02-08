@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { VinaProgress } from "@/lib/api/types";
+import { useUser } from "./UserContext";
 
 // Default initial state matching PRD
 const DEFAULT_PROGRESS: VinaProgress = {
@@ -10,7 +11,10 @@ const DEFAULT_PROGRESS: VinaProgress = {
     lessonScores: {},
     currentDifficulty: 3, // Default difficulty (1-5 scale)
     totalPoints: 0,
+    diamonds: 0,
     streak: 0,
+    minutesToday: 0,
+    minutesThisWeek: 0,
     lastActiveDate: new Date().toISOString().split("T")[0],
     practicePointsToday: 0,
     lastPracticeDate: "",
@@ -19,6 +23,8 @@ const DEFAULT_PROGRESS: VinaProgress = {
     preAssessmentScore: 0,
     startingLesson: "l01_what_llms_are",
     preAssessmentDate: "",
+    tourCompleted: false,
+    currentTourStep: 0,
 };
 
 interface ProgressContextType {
@@ -27,6 +33,11 @@ interface ProgressContextType {
     updateProgress: (updates: Partial<VinaProgress>) => void;
     unlockLesson: (lessonId: string) => void;
     completeLesson: (lessonId: string, score: number, total: number) => void;
+    addMinutes: (minutes: number) => void;
+    addDiamonds: (amount: number) => void;
+    incrementStreak: () => void;
+    markGoalAchieved: (date: string) => void;
+    resetProgress: () => void;
 }
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
@@ -34,14 +45,14 @@ const ProgressContext = createContext<ProgressContextType | undefined>(undefined
 export function ProgressProvider({ children }: { children: ReactNode }) {
     const [progress, setProgress] = useState<VinaProgress>(DEFAULT_PROGRESS);
     const [isLoading, setIsLoading] = useState(true);
+    const { user } = useUser();
 
+    // Initial mount: load from LocalStorage
     useEffect(() => {
-        // Check LocalStorage on mount
         const stored = localStorage.getItem("vina_progress");
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
-                // Merge with default to ensure new fields are present
                 setProgress({ ...DEFAULT_PROGRESS, ...parsed });
             } catch (e) {
                 console.error("Failed to parse progress from local storage", e);
@@ -50,62 +61,112 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
     }, []);
 
-    const saveProgress = (newProgress: VinaProgress) => {
-        setProgress(newProgress);
-        localStorage.setItem("vina_progress", JSON.stringify(newProgress));
-    };
+    // Sync to LocalStorage on every state change
+    useEffect(() => {
+        if (!isLoading) {
+            localStorage.setItem("vina_progress", JSON.stringify(progress));
+        }
+    }, [progress, isLoading]);
+
+    // Goal Reach Logic: Automated Tracking
+    useEffect(() => {
+        if (!user) return;
+
+        const today = new Date().toISOString().split("T")[0];
+        const goalMins = user.dailyGoalMinutes || 10;
+
+        if (progress.minutesToday >= goalMins && !progress.dailyGoalHistory?.[today]) {
+            markGoalAchieved(today);
+            // Resolution Bonus: 100 Diamonds for hitting the daily goal!
+            addDiamonds(100);
+        }
+    }, [progress.minutesToday, user, progress.dailyGoalHistory]);
 
     const updateProgress = (updates: Partial<VinaProgress>) => {
-        const newProgress = { ...progress, ...updates };
-        saveProgress(newProgress);
+        setProgress(prev => ({ ...prev, ...updates }));
     };
 
     const unlockLesson = (lessonId: string) => {
-        // In a real app this might set 'unlocked' flags, 
-        // but in Vina, unlocking is derived from completed prerequisites.
-        // However, we might want to explicitly set 'currentLessonId'
-        updateProgress({ currentLessonId: lessonId });
+        setProgress(prev => ({ ...prev, currentLessonId: lessonId }));
     };
 
     const completeLesson = (lessonId: string, score: number, total = 3) => {
-        const today = new Date().toISOString().split("T")[0];
-        const newCompleted = progress.completedLessons.includes(lessonId)
-            ? progress.completedLessons
-            : [...progress.completedLessons, lessonId];
+        setProgress(prev => {
+            const today = new Date().toISOString().split("T")[0];
+            const newCompleted = prev.completedLessons.includes(lessonId)
+                ? prev.completedLessons
+                : [...prev.completedLessons, lessonId];
 
-        const newScores = {
-            ...progress.lessonScores,
-            [lessonId]: {
-                score,
-                total,
-                passedAt: new Date().toISOString(),
-            },
-        };
+            const newScores = {
+                ...prev.lessonScores,
+                [lessonId]: {
+                    score,
+                    total,
+                    passedAt: new Date().toISOString(),
+                },
+            };
 
-        // Simple points logic: 10 pts per correct answer
-        const pointsEarned = score * 10;
+            // Streak logic
+            let newStreak = prev.streak;
+            const lastActive = new Date(prev.lastActiveDate);
+            const currentDate = new Date(today);
+            const dayDiff = Math.floor((currentDate.getTime() - lastActive.getTime()) / (1000 * 3600 * 24));
 
-        // Streak logic
-        let newStreak = progress.streak;
-        const lastActive = new Date(progress.lastActiveDate);
-        const currentDate = new Date(today);
-        const dayDiff = Math.floor((currentDate.getTime() - lastActive.getTime()) / (1000 * 3600 * 24));
+            if (dayDiff === 1) {
+                newStreak += 1;
+            } else if (dayDiff > 1) {
+                newStreak = 1;
+            } else if (prev.streak === 0) {
+                newStreak = 1;
+            }
 
-        if (dayDiff === 1) {
-            newStreak += 1; // Consecutive day
-        } else if (dayDiff > 1) {
-            newStreak = 1; // Broken streak
-        }
-        // If dayDiff === 0, streak remains same (already active today)
-
-        saveProgress({
-            ...progress,
-            completedLessons: newCompleted,
-            lessonScores: newScores,
-            totalPoints: progress.totalPoints + pointsEarned,
-            streak: newStreak,
-            lastActiveDate: today,
+            return {
+                ...prev,
+                completedLessons: newCompleted,
+                lessonScores: newScores,
+                streak: newStreak,
+                lastActiveDate: today,
+            };
         });
+    };
+
+    const addMinutes = (minutes: number) => {
+        setProgress(prev => ({
+            ...prev,
+            minutesToday: prev.minutesToday + minutes,
+            minutesThisWeek: prev.minutesThisWeek + minutes,
+            totalLearningTimeSeconds: prev.totalLearningTimeSeconds + (minutes * 60)
+        }));
+    };
+
+    const addDiamonds = (amount: number) => {
+        setProgress(prev => ({
+            ...prev,
+            diamonds: prev.diamonds + amount,
+            totalPoints: prev.totalPoints + amount
+        }));
+    };
+
+    const incrementStreak = () => {
+        setProgress(prev => ({
+            ...prev,
+            streak: prev.streak + 1
+        }));
+    };
+
+    const markGoalAchieved = (date: string) => {
+        setProgress(prev => ({
+            ...prev,
+            dailyGoalHistory: {
+                ...(prev.dailyGoalHistory || {}),
+                [date]: true
+            }
+        }));
+    };
+
+    const resetProgress = () => {
+        setProgress(DEFAULT_PROGRESS);
+        localStorage.removeItem("vina_progress");
     };
 
     return (
@@ -116,6 +177,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                 updateProgress,
                 unlockLesson,
                 completeLesson,
+                addMinutes,
+                addDiamonds,
+                incrementStreak,
+                markGoalAchieved,
+                resetProgress,
             }}
         >
             {children}

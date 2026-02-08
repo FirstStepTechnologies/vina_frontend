@@ -19,11 +19,12 @@ const generateUUID = () => {
 };
 
 export class ApiService {
-    static async createUserProfile(profession: string): Promise<VinaUser> {
+    static async createUserProfile(profession: string, dailyGoalMinutes: number = 10): Promise<VinaUser> {
         await sleep(DELAY_MS);
         return {
             userId: generateUUID(),
             profession,
+            dailyGoalMinutes,
             createdAt: new Date().toISOString(),
         };
     }

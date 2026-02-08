@@ -8,6 +8,7 @@ interface UserContextType {
     isLoading: boolean;
     login: (newUser: VinaUser) => void;
     logout: () => void;
+    updateUser: (updates: Partial<VinaUser>) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -40,8 +41,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("vina_progress"); // Also clear progress on logout
     };
 
+    const updateUser = (updates: Partial<VinaUser>) => {
+        setUser(prev => {
+            if (!prev) return null;
+            const updated = { ...prev, ...updates };
+            localStorage.setItem("vina_user", JSON.stringify(updated));
+            return updated;
+        });
+    };
+
     return (
-        <UserContext.Provider value={{ user, isLoading, login, logout }}>
+        <UserContext.Provider value={{ user, isLoading, login, logout, updateUser }}>
             {children}
         </UserContext.Provider>
     );

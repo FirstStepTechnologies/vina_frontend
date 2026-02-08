@@ -7,13 +7,11 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { UserProvider } from "@/contexts/UserContext";
 import { ProgressProvider } from "@/contexts/ProgressContext";
+import { VinaAssistant } from "@/components/ui/VinaAssistant";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Vina - Learn Your Way",
-  description: "Adaptive video learning platform for professionals",
-};
+// ... (skipping some metadata)
 
 export default function RootLayout({
   children,
@@ -32,6 +30,7 @@ export default function RootLayout({
                   {children}
                 </main>
                 <BottomNav />
+                <VinaAssistant />
               </div>
             </MobileContainer>
           </ProgressProvider>

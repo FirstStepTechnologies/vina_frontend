@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, BarChart3 } from "lucide-react"; // Using standard Lucide icons
+import { Home, ClipboardList, BarChart3, User } from "lucide-react"; // Using standard Lucide icons
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -11,15 +11,13 @@ export function BottomNav() {
     // Hide on onboarding pages
     if (
         pathname === "/" ||
+        pathname === "/intro" ||
         pathname.includes("/profession") ||
         pathname.includes("/assessment") ||
-        pathname.includes("/lesson/") // Hide on video player as well? PRD says fixed bottom bar EXCEPT Welcome/Prof/Assess.
-        // Wait, PRD 5.13 says: "Routes: All screens except Welcome, Profession Select, Pre-Assessment"
-        // PRD 5.5 (Lesson Player) doesn't explicitly mention hiding it, but usually video players take full screen.
-        // Let's hide it on lesson player to maximize view.
+        pathname.includes("/lesson/")
     ) {
         if (pathname.includes("/lesson/")) return null;
-        if (pathname === "/" || pathname === "/profession" || pathname === "/assessment") return null;
+        if (pathname === "/" || pathname === "/intro" || pathname === "/profession" || pathname === "/assessment") return null;
     }
 
     const tabs = [
@@ -40,6 +38,12 @@ export function BottomNav() {
             label: "Progress",
             route: "/progress",
             icon: BarChart3,
+        },
+        {
+            id: "profile",
+            label: "Profile",
+            route: "/profile",
+            icon: User,
         },
     ];
 

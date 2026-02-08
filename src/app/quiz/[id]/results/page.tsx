@@ -8,19 +8,52 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle } from "lucide-react";
 import confetti from "canvas-confetti";
 
+import { useUser } from "@/contexts/UserContext";
+import { CelebrationOverlay } from "@/app/lesson/[id]/components/CelebrationOverlay";
+
 export default function QuizResultsPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const searchParams = useSearchParams();
-    const { completeLesson } = useProgress();
+    const { user } = useUser();
+    const { progress, completeLesson, addDiamonds, addMinutes, incrementStreak } = useProgress();
 
     const score = parseInt(searchParams.get("score") || "0");
     const total = parseInt(searchParams.get("total") || "3");
     const passed = score >= 2;
 
+    const [showCelebration, setShowCelebration] = useState(false);
+    const [celebrationStats, setCelebrationStats] = useState({
+        diamondsEarned: 0,
+        streakEarned: false,
+        minutesToday: 0,
+        minutesThisWeek: 0,
+        dailyGoalAchieved: false,
+        dailyGoalMinutes: 0
+    });
+
     useEffect(() => {
         if (passed) {
             completeLesson(params.id, score, total);
+
+            // Gamification Logic
+            const diamondReward = score * 10;
+            const dailyGoal = user?.dailyGoalMinutes || 10;
+            const reachedGoal = progress.minutesToday >= dailyGoal && (progress.minutesToday - 2) < dailyGoal; // Approximation
+
+            addDiamonds(diamondReward);
+
+            setCelebrationStats({
+                diamondsEarned: diamondReward,
+                streakEarned: false, // Don't double count streak here
+                minutesToday: progress.minutesToday,
+                minutesThisWeek: progress.minutesThisWeek,
+                dailyGoalAchieved: reachedGoal,
+                dailyGoalMinutes: dailyGoal
+            });
+
+            setShowCelebration(true);
+
             confetti({
                 particleCount: 100,
                 spread: 70,
@@ -28,9 +61,9 @@ export default function QuizResultsPage() {
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run once on mount
+    }, []);
 
-    const handleContinue = () => {
+    const handleContinueToDashboard = () => {
         router.replace("/dashboard");
     };
 
@@ -39,7 +72,14 @@ export default function QuizResultsPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 text-center">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 text-center relative">
+            <CelebrationOverlay
+                isOpen={showCelebration}
+                onContinue={handleContinueToDashboard}
+                buttonText="Finish Lesson"
+                stats={celebrationStats}
+            />
+
             <Card className="w-full max-w-sm flex flex-col items-center p-8 animate-slide-up">
                 {passed ? (
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600">
@@ -75,14 +115,14 @@ export default function QuizResultsPage() {
 
                 <Button
                     className="w-full h-14 text-lg mb-3"
-                    onClick={passed ? handleContinue : handleRetry}
+                    onClick={passed ? handleContinueToDashboard : handleRetry}
                     variant={passed ? "default" : "secondary"}
                 >
                     {passed ? "Continue Learning" : "Review Lesson"}
                 </Button>
 
                 {!passed && (
-                    <button onClick={handleContinue} className="text-sm text-gray-400 font-medium hover:text-gray-600">
+                    <button onClick={handleContinueToDashboard} className="text-sm text-gray-400 font-medium hover:text-gray-600">
                         Skip for now
                     </button>
                 )}

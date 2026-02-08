@@ -25,8 +25,8 @@ export function CourseMapNode({ lesson, state, onClick, isLast, labelPosition = 
                     state === "active" && "bg-white scale-125 shadow-[0_0_40px_rgba(20,184,166,0.25)] ring-12 ring-teal-500/5",
                     // Completed: The Filled Essence (Light Mode)
                     state === "completed" && "bg-white/40 backdrop-blur-md border-[2px] border-teal-500/20 shadow-sm",
-                    // Locked: Ghostly Light Grey Disc (Light Mode)
-                    state === "locked" && "bg-white/20 backdrop-blur-sm border-[2px] border-white/40"
+                    // Locked: Ghostly Light Grey Disc (Light Mode) - Increased opacity for contrast
+                    state === "locked" && "bg-white/50 backdrop-blur-md border-[2px] border-white ring-1 ring-teal-500/5 shadow-sm"
                 )}
             >
                 {/* Active Inner Glow Halo */}
@@ -35,12 +35,12 @@ export function CourseMapNode({ lesson, state, onClick, isLast, labelPosition = 
                 )}
 
                 {state === "active" ? (
-                    <div className="relative w-11 h-11 z-10">
+                    <div className="relative w-11 h-11 z-10 rounded-full overflow-hidden bg-white">
                         <Image
                             src="/assets/Vina Logo.png"
                             alt="Current Lesson"
                             fill
-                            className="object-contain"
+                            className="object-contain mix-blend-multiply"
                             priority
                         />
                     </div>
@@ -49,19 +49,18 @@ export function CourseMapNode({ lesson, state, onClick, isLast, labelPosition = 
                         <Check size={28} strokeWidth={4} className="text-white" />
                     </div>
                 ) : (
-                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                        <Lock size={22} className="text-teal-900/20" />
+                    <div className="w-14 h-14 rounded-full bg-white/40 flex items-center justify-center border border-white/60">
+                        <Lock size={22} className="text-teal-900/40" />
                     </div>
                 )}
             </button>
 
-            {/* Lesson Label - Light Mode */}
+            {/* Lesson Label - Increased offset to clear Active Node scale/glow */}
             <div className={cn(
-                "absolute top-1/2 -translate-y-1/2 w-[180px] transition-all duration-500 pointer-events-none",
-                labelPosition === "right" ? "left-[130px] text-left" : "right-[130px] text-right",
-                state === "locked" ? "opacity-30" : "opacity-100"
+                "absolute top-1/2 -translate-y-1/2 w-[180px] transition-all duration-500 pointer-events-none left-[105px] text-left",
+                state === "locked" ? "opacity-60" : "opacity-100"
             )}>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-600 mb-0.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-teal-600 mb-0.5">
                     Level {lesson.lessonNumber}
                 </p>
                 <p className="text-[15px] font-black text-teal-950 leading-tight">

@@ -1,6 +1,9 @@
 export interface VinaUser {
     userId: string;
     profession: string;
+    dailyGoalMinutes: number; // Added for gamification
+    resolution?: string;
+    onboardingResponses?: Record<string, string>;
     createdAt: string;
 }
 
@@ -15,8 +18,11 @@ export interface VinaProgress {
         };
     };
     currentDifficulty: number;
-    totalPoints: number;
+    totalPoints: number; // This will act as Diamonds
+    diamonds: number; // Explicit diamonds
     streak: number;
+    minutesToday: number; // Added for gamification
+    minutesThisWeek: number; // Added for gamification
     lastActiveDate: string;
     practicePointsToday: number;
     lastPracticeDate: string;
@@ -25,6 +31,9 @@ export interface VinaProgress {
     preAssessmentScore: number;
     startingLesson: string;
     preAssessmentDate: string;
+    dailyGoalHistory?: Record<string, boolean>;
+    tourCompleted?: boolean;
+    currentTourStep?: number;
 }
 
 export interface Lesson {

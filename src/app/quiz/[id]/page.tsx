@@ -79,7 +79,7 @@ export default function QuizPage() {
                 />
             </div>
 
-            <div className="flex-1 px-6 py-8 flex flex-col max-w-lg mx-auto w-full">
+            <div className="flex-1 px-6 py-8 flex flex-col max-w-lg mx-auto w-full" id="tour-quiz">
                 <div className="flex-1">
                     <QuizQuestion
                         key={currentQ.id} // Re-mount to reset state

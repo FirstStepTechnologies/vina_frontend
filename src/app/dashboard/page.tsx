@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Gem, Flame, Clock } from "lucide-react";
 import { useProgress } from "@/contexts/ProgressContext";
 import { useUser } from "@/contexts/UserContext";
 import { ApiService } from "@/lib/api/service";
 import { Lesson } from "@/lib/api/types";
 import { CourseMapNode } from "./components/CourseMapNode";
 import { cn } from "@/lib/utils";
+import { ResolutionHUD } from "./components/ResolutionHUD";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -45,43 +47,28 @@ export default function Dashboard() {
 
     // --- Layout Constants ---
     const ROW_HEIGHT = 140; // Vertical spacing
-    const AMPLITUDE = 22;   // Horizontal sway in % (Total width 100%)
-    const CENTER_X = 50;    // Center in %
+    const AMPLITUDE = 0;   // No horizontal sway - Straight line
+    const CENTER_X = 25;    // Shifted left (25%) to provide ample room for labels on the right
 
     // Helper to calculate position for a node index
     const getNodePosition = (index: number) => {
         const y = index * ROW_HEIGHT + 100;
-        // Sine wave for xOffset in %
-        const xOffset = Math.sin(index * 0.8) * AMPLITUDE;
-        const x = CENTER_X + xOffset;
+        const x = CENTER_X; // Static center
+        const xOffset = 0;
 
         return { x: `${x}%`, y, xOffset };
     };
 
-    // Generate SVG path string
+    // Generate SVG path string - Simplified straight line
     const generatePath = () => {
         if (lessons.length === 0) return "";
-        let path = "";
+        const startPos = getNodePosition(0);
+        const endPos = getNodePosition(lessons.length - 1);
 
-        lessons.forEach((_, i) => {
-            const pos = getNodePosition(i);
-            const svgX = CENTER_X + pos.xOffset;
-            const svgY = pos.y + 40; // Center of node
+        const startY = startPos.y + 40;
+        const endY = endPos.y + 40;
 
-            if (i === 0) {
-                path += `M ${svgX} ${svgY}`;
-            } else {
-                const prevPos = getNodePosition(i - 1);
-                const prevSvgX = CENTER_X + prevPos.xOffset;
-                const prevSvgY = prevPos.y + 40;
-
-                const cp1y = prevSvgY + (ROW_HEIGHT / 2);
-                const cp2y = svgY - (ROW_HEIGHT / 2);
-
-                path += ` C ${prevSvgX} ${cp1y}, ${svgX} ${cp2y}, ${svgX} ${svgY}`;
-            }
-        });
-        return path;
+        return `M ${CENTER_X} ${startY} L ${CENTER_X} ${endY}`;
     };
 
     const getLessonState = (lesson: Lesson) => {
@@ -106,12 +93,35 @@ export default function Dashboard() {
 
             {/* Header */}
             <div className="pt-8 px-6 pb-6 sticky top-0 z-50 border-b border-teal-100/50 backdrop-blur-2xl">
-                <div className="flex justify-between items-end mb-4">
+                <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h1 className="text-2xl font-black text-teal-900 drop-shadow-sm">
+                        <h1 className="text-2xl font-black text-teal-900 drop-shadow-sm leading-none">
                             LLM Foundations
                         </h1>
-                        <p className="text-sm text-teal-600/70 font-medium">Your learning path</p>
+                        <p className="text-sm text-teal-600/70 font-medium mt-1">Your learning path</p>
+                    </div>
+                    <div className="flex items-center gap-1.5" id="tour-stats">
+                        {/* Diamonds */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl px-2.5 py-1.5 border border-blue-100 flex items-center gap-1.5 shadow-sm ring-1 ring-blue-50/50">
+                            <div className="w-5 h-5 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                                <Gem size={13} fill="#3b82f6" fillOpacity={0.2} className="text-blue-500" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-[12px] font-black text-blue-900 tracking-tight">{progress.diamonds || 0}</span>
+                        </div>
+                        {/* Streak */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl px-2.5 py-1.5 border border-orange-100 flex items-center gap-1.5 shadow-sm ring-1 ring-orange-50/50">
+                            <div className="w-5 h-5 bg-orange-50 rounded-lg flex items-center justify-center shrink-0">
+                                <Flame size={13} fill="#f97316" fillOpacity={0.2} className="text-orange-500" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-[12px] font-black text-orange-900 tracking-tight">{progress.streak || 0}</span>
+                        </div>
+                        {/* Minutes Today */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl px-2.5 py-1.5 border border-teal-100 flex items-center gap-1.5 shadow-sm ring-1 ring-teal-50/50">
+                            <div className="w-5 h-5 bg-teal-50 rounded-lg flex items-center justify-center shrink-0">
+                                <Clock size={13} className="text-teal-600" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-[12px] font-black text-teal-900 tracking-tight">{progress.minutesToday || 0}m</span>
+                        </div>
                     </div>
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
@@ -130,8 +140,10 @@ export default function Dashboard() {
                 </div>
             </div>
 
+            <ResolutionHUD />
+
             {/* Scrollable Map Area */}
-            <div className="flex-1 relative overflow-hidden" ref={containerRef}>
+            <div className="flex-1 relative overflow-hidden" ref={containerRef} id="tour-path">
                 <div className="relative w-full max-w-md mx-auto" style={{ height: totalHeight }}>
 
                     {/* Magical Path SVG */}
@@ -205,7 +217,7 @@ export default function Dashboard() {
                                     state={state}
                                     onClick={() => router.push(`/lesson/${lesson.lessonId}`)}
                                     isLast={isLast}
-                                    labelPosition={pos.xOffset > 0 ? "left" : "right"}
+                                    labelPosition="right"
                                 />
                                 {/* Scaterred Clouds and Decorations */}
                                 {index % 2 === 0 && (

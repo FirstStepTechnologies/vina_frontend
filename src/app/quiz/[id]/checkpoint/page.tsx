@@ -8,21 +8,34 @@ import { QuizQuestion as IQuizQuestion } from "@/lib/api/types";
 import { QuizQuestion } from "@/components/ui/quiz-question";
 import { Button } from "@/components/ui/button";
 import { useProgress } from "@/contexts/ProgressContext";
+import { useUser } from "@/contexts/UserContext";
+import { CelebrationOverlay } from "@/app/lesson/[id]/components/CelebrationOverlay";
 
 export default function CheckpointQuizPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
-    const { completeLesson } = useProgress();
+    const { user } = useUser();
+    const { progress, completeLesson, addMinutes, addDiamonds, incrementStreak } = useProgress();
+
     const [questions, setQuestions] = useState<IQuizQuestion[]>([]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const [score, setScore] = useState(0);
     const [showNext, setShowNext] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Celebration State
+    const [showCelebration, setShowCelebration] = useState(false);
+    const [celebrationStats, setCelebrationStats] = useState({
+        diamondsEarned: 0,
+        streakEarned: false,
+        minutesToday: 0,
+        minutesThisWeek: 0,
+        dailyGoalAchieved: false,
+        dailyGoalMinutes: 0
+    });
+
     useEffect(() => {
         async function load() {
-            // In a real app, this would get specific "Checkpoint" questions
-            // For mock, we reuse the lesson quiz questions
             const data = await ApiService.getQuiz(params.id);
             if (data && data.length > 0) {
                 setQuestions(data);
@@ -49,21 +62,42 @@ export default function CheckpointQuizPage() {
     };
 
     const finishCheckpoint = () => {
-        const finalScore = score + (showNext && questions[currentIdx].correctAnswer ? 0 : 0); // Logic correction if needed
-        // Actually handleAnswer updates score for current q.
-
         // Checkpoint pass logic (strict 2/3 or 3/3)
         const passed = score >= 2;
 
         if (passed) {
-            // Mark lesson complete immediately
+            // Gamification Logic for Checkpoint
+            const quizMins = 2; // Fixed time for assessment
+            const newMinutesToday = progress.minutesToday + quizMins;
+            const dailyGoal = user?.dailyGoalMinutes || 10;
+            const reachedGoal = newMinutesToday >= dailyGoal && progress.minutesToday < dailyGoal;
+            const diamondReward = passed ? 50 : 0; // Bonus for passing skip-ahead
+
+            // Update Global State
             completeLesson(params.id, score, questions.length);
-            // Navigate to dashboard
-            router.push("/dashboard");
+            addMinutes(quizMins);
+            addDiamonds(diamondReward);
+
+            const isFirstOfToday = progress.minutesToday === 0;
+            if (isFirstOfToday) incrementStreak();
+
+            setCelebrationStats({
+                diamondsEarned: diamondReward,
+                streakEarned: isFirstOfToday,
+                minutesToday: newMinutesToday,
+                minutesThisWeek: progress.minutesThisWeek + quizMins,
+                dailyGoalAchieved: reachedGoal,
+                dailyGoalMinutes: dailyGoal
+            });
+
+            setShowCelebration(true);
         } else {
-            // Fail: Go back to lesson
             router.push(`/lesson/${params.id}?msg=checkpoint_failed`);
         }
+    };
+
+    const handleContinueToDashboard = () => {
+        router.push("/dashboard");
     };
 
     if (isLoading) return <div className="min-h-screen pt-20 text-center">Loading Assessment...</div>;
@@ -72,7 +106,13 @@ export default function CheckpointQuizPage() {
     const currentQ = questions[currentIdx];
 
     return (
-        <div className="flex flex-col min-h-screen bg-teal-50 pb-20">
+        <div className="flex flex-col min-h-screen bg-teal-50 pb-20 relative">
+            <CelebrationOverlay
+                isOpen={showCelebration}
+                onContinue={handleContinueToDashboard}
+                buttonText="Continue to Dashboard"
+                stats={celebrationStats}
+            />
             <header className="px-6 py-6 bg-white border-b border-teal-100 flex items-center">
                 <button onClick={() => router.back()} className="mr-4 text-gray-400 hover:text-gray-600">
                     <ArrowLeft size={24} />
