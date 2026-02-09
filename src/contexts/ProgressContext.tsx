@@ -16,6 +16,8 @@ const DEFAULT_PROGRESS: VinaProgress = {
     total_learning_time_seconds: 0,
     pre_assessment_completed: false,
     starting_lesson: "l01_what_llms_are",
+    currentTourStep: 0,
+    tourCompleted: false,
 };
 
 interface ProgressContextType {

@@ -33,6 +33,8 @@ export interface VinaProgress {
     total_learning_time_seconds: number;
     pre_assessment_completed: boolean;
     starting_lesson: string;
+    currentTourStep?: number;
+    tourCompleted?: boolean;
 }
 
 export interface Lesson {
