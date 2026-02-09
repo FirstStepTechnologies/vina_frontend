@@ -1,6 +1,6 @@
 import { Lesson, QuizQuestion, VinaUser, Token } from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://vina-backend-6snh.onrender.com/api/v1";
 
 export class ApiService {
     private static getAuthHeader(): Record<string, string> {
