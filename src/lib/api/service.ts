@@ -83,8 +83,10 @@ export class ApiService {
         return this.handleResponse<Lesson[]>(response);
     }
 
-    static async getLesson(lessonId: string, difficulty: number = 3): Promise<Lesson> {
-        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}?difficulty=${difficulty}`, {
+
+    static async getLesson(lessonId: string, difficulty: number = 3, profession?: string): Promise<Lesson> {
+        const professionParam = profession ? `&profession=${encodeURIComponent(profession)}` : '';
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}?difficulty=${difficulty}${professionParam}`, {
             headers: this.getAuthHeader(),
         });
         return this.handleResponse<Lesson>(response);
@@ -142,11 +144,17 @@ export class ApiService {
         return this.handleResponse<any>(response);
     }
 
-    static async getQuiz(lessonId: string): Promise<QuizQuestion[]> {
+    static async getQuiz(lessonId: string, profession?: string): Promise<QuizQuestion[]> {
         const storedUser = localStorage.getItem("vina_user");
         const userId = storedUser ? JSON.parse(storedUser).id : "";
 
-        const response = await fetch(`${API_BASE_URL}/quizzes/${lessonId}?userId=${userId}`, {
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (userId) params.append("userId", userId);
+        if (profession) params.append("profession", profession);
+
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetch(`${API_BASE_URL}/quizzes/${lessonId}${queryString}`, {
             headers: this.getAuthHeader(),
         });
         const data = await this.handleResponse<any>(response);

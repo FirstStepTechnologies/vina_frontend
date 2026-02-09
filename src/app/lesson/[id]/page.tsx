@@ -29,7 +29,8 @@ export default function LessonPage() {
         async function load() {
             // Use currentDifficulty from progress or default to 3
             const diff = (progress as any).currentDifficulty || 3;
-            const data = await ApiService.getLesson(params.id, diff);
+            const profession = user?.profile?.profession;  // Get profession from user context
+            const data = await ApiService.getLesson(params.id, diff, profession);
             if (data) {
                 setLesson(data);
                 if (data.videoUrl) {
@@ -41,7 +42,7 @@ export default function LessonPage() {
             else router.replace("/dashboard");
         }
         load();
-    }, [params.id, router, progress]);
+    }, [params.id, router, progress, user]);
 
     const handleVideoEnd = async () => {
         // Calculate minutes based on lesson estimatedDuration (e.g. 5)
@@ -79,7 +80,8 @@ export default function LessonPage() {
         try {
             // Fetch the adapted lesson video
             // The backend router now returns the Cloudinary URL from the cache
-            const data = await ApiService.getLesson(params.id, newDifficulty);
+            const profession = user?.profile?.profession;  // Get profession from user context
+            const data = await ApiService.getLesson(params.id, newDifficulty, profession);
 
             // Artificial delay for "Personalizing" experience
             setTimeout(() => {

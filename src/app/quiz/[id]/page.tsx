@@ -7,10 +7,12 @@ import { ApiService } from "@/lib/api/service";
 import { QuizQuestion as IQuizQuestion } from "@/lib/api/types";
 import { QuizQuestion } from "@/components/ui/quiz-question";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@/contexts/UserContext";
 
 export default function QuizPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
+    const { user } = useUser();
     const [questions, setQuestions] = useState<IQuizQuestion[]>([]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const [score, setScore] = useState(0);
@@ -19,7 +21,8 @@ export default function QuizPage() {
 
     useEffect(() => {
         async function load() {
-            const data = await ApiService.getQuiz(params.id);
+            const profession = user?.profile?.profession;
+            const data = await ApiService.getQuiz(params.id, profession);
             if (data && data.length > 0) {
                 setQuestions(data);
             } else {

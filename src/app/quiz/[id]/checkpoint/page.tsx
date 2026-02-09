@@ -37,7 +37,8 @@ export default function CheckpointQuizPage() {
 
     useEffect(() => {
         async function load() {
-            const data = await ApiService.getQuiz(params.id);
+            const profession = user?.profile?.profession;
+            const data = await ApiService.getQuiz(params.id, profession);
             if (data && data.length > 0) {
                 setQuestions(data);
             } else {
