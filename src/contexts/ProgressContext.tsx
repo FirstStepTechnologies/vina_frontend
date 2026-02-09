@@ -89,6 +89,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
             }
         } catch (e) {
             console.error("Failed to complete lesson on server", e);
+            // OPTIMISTIC UPDATE: If server fails (e.g. CORS, Offline), 
+            // complete it locally so user isn't stuck.
+            setProgress(prev => {
+                // Avoid duplicates
+                if (prev.completed_lessons.includes(lessonId)) return prev;
+                return {
+                    ...prev,
+                    completed_lessons: [...prev.completed_lessons, lessonId]
+                };
+            });
         }
     };
 
