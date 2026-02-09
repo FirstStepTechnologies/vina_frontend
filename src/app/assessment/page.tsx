@@ -66,10 +66,8 @@ export default function AssessmentScreen() {
 
             // Update progress context
             updateProgress({
-                preAssessmentCompleted: true,
-                preAssessmentScore: result.score,
-                startingLesson: result.startingLesson,
-                preAssessmentDate: new Date().toISOString()
+                pre_assessment_completed: true,
+                starting_lesson: result.startingLesson,
             });
 
             // Navigate to dashboard
@@ -83,8 +81,8 @@ export default function AssessmentScreen() {
     const handleSkip = () => {
         // Default start
         updateProgress({
-            preAssessmentCompleted: false,
-            startingLesson: "l01_what_llms_are",
+            pre_assessment_completed: false,
+            starting_lesson: "l01_what_llms_are",
         });
         router.push("/dashboard");
     };
@@ -129,23 +127,23 @@ export default function AssessmentScreen() {
                         Question {currentIdx + 1} of {questions.length}
                     </span>
                     <h2 className="text-2xl font-bold text-gray-900 leading-tight">
-                        {currentQuestion.questionText}
+                        {currentQuestion.text}
                     </h2>
                 </div>
 
                 <div className="space-y-3 flex-1">
                     {currentQuestion.options.map((option) => (
                         <button
-                            key={option}
-                            onClick={() => handleSelect(option)}
+                            key={option.text}
+                            onClick={() => handleSelect(option.text)}
                             className={cn(
                                 "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 text-lg font-medium",
-                                answers[currentQuestion.id] === option
+                                answers[currentQuestion.id] === option.text
                                     ? "border-teal-600 bg-teal-50 text-teal-800"
                                     : "border-gray-200 text-gray-700 hover:border-teal-300 hover:bg-gray-50"
                             )}
                         >
-                            {option}
+                            {option.text}
                         </button>
                     ))}
                 </div>
