@@ -48,7 +48,8 @@ export default function LessonPage() {
         const lessonMins = lesson?.estimatedDuration || 5;
 
         // Update Learning Time (Impact) - This handles sync to server
-        await addMinutes(lessonMins);
+        // Fire and forget - don't block navigation on sync
+        addMinutes(lessonMins).catch(e => console.error("Background sync failed", e));
 
         // Navigate to Quiz immediately for rewards
         router.push(`/quiz/${params.id}`);
