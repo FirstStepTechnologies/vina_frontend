@@ -72,6 +72,7 @@ export default function LessonPage() {
             if (params.id === "l01_what_llms_are") {
                 if (type === "simplify") setVideoSrc("/assets/lesson1-toohard.mp4");
                 else if (type === "concise") setVideoSrc("/assets/lesson1-tooeasy.mp4");
+                else if (type === "examples") setVideoSrc("/assets/lesson1-examples.mp4");
             }
         }, 2000);
     };
