@@ -71,36 +71,36 @@ export const MOCK_QUIZ_QUESTIONS: Record<string, QuizQuestion[]> = {
     "l01_what_llms_are": [
         {
             id: "q_l01_01",
-            questionText: "What does LLM stand for?",
+            text: "What does LLM stand for?",
             options: [
-                "Large Language Model",
-                "Linear Learning Machine",
-                "Logical Language Module",
-                "Limited Language Memory"
+                { text: "Large Language Model", is_correct: true },
+                { text: "Linear Learning Machine", is_correct: false },
+                { text: "Logical Language Module", is_correct: false },
+                { text: "Limited Language Memory", is_correct: false }
             ],
             correctAnswer: "Large Language Model",
             explanation: "LLM stands for Large Language Model, which are AI systems trained on vast amounts of text data."
         },
         {
             id: "q_l01_02",
-            questionText: "How do LLMs primarily work?",
+            text: "How do LLMs primarily work?",
             options: [
-                "By understanding human consciousness",
-                "By predicting the next token in a sequence",
-                "By querying a structured database",
-                "By copying wikipedia articles"
+                { text: "By understanding human consciousness", is_correct: false },
+                { text: "By predicting the next token in a sequence", is_correct: true },
+                { text: "By querying a structured database", is_correct: false },
+                { text: "By copying wikipedia articles", is_correct: false }
             ],
             correctAnswer: "By predicting the next token in a sequence",
             explanation: "At their core, LLMs are probabilistic engines that predict the most likely next word (token) based on context."
         },
         {
             id: "q_l01_03",
-            questionText: "Which is an example of an LLM?",
+            text: "Which is an example of an LLM?",
             options: [
-                "Microsoft Excel",
-                "GPT-4",
-                "Adobe Photoshop",
-                "Linux"
+                { text: "Microsoft Excel", is_correct: false },
+                { text: "GPT-4", is_correct: true },
+                { text: "Adobe Photoshop", is_correct: false },
+                { text: "Linux", is_correct: false }
             ],
             correctAnswer: "GPT-4",
             explanation: "GPT-4 is a popular Large Language Model developed by OpenAI."
@@ -111,8 +111,13 @@ export const MOCK_QUIZ_QUESTIONS: Record<string, QuizQuestion[]> = {
 export const MOCK_PRE_ASSESSMENT_QUESTIONS: QuizQuestion[] = [
     {
         id: "pa_01",
-        questionText: "Have you used an LLM before?",
-        options: ["Never", "Once or twice", "Weekly", "Daily"],
+        text: "Have you used an LLM before?",
+        options: [
+            { text: "Never", is_correct: false },
+            { text: "Once or twice", is_correct: false },
+            { text: "Weekly", is_correct: false },
+            { text: "Daily", is_correct: true }
+        ],
         correctAnswer: "Daily", // Configuring "Daily" as the 'advanced' answer for logic simplicity
         explanation: "This helps us gauge your familiarity."
     },
