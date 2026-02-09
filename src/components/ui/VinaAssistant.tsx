@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useProgress } from "@/contexts/ProgressContext";
 import { useUser } from "@/contexts/UserContext";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ export function VinaAssistant() {
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [bubbleStyle, setBubbleStyle] = useState<React.CSSProperties>({});
 
-    const TOUR_STEPS: TourStep[] = [
+    const TOUR_STEPS: TourStep[] = useMemo(() => [
         {
             id: 0,
             page: "/dashboard",
@@ -103,7 +103,7 @@ export function VinaAssistant() {
                 router.push("/dashboard");
             }
         }
-    ];
+    ], [router]);
 
     const currentStep = TOUR_STEPS.find(s => s.id === progress.currentTourStep);
 
