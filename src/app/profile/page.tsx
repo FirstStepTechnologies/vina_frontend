@@ -14,16 +14,21 @@ export default function ProfilePage() {
     const { user, updateUser, logout } = useUser();
     const { progress } = useProgress();
 
-    const [resolution, setResolution] = useState(user?.resolution || "");
-    const [dailyGoal, setDailyGoal] = useState(user?.dailyGoalMinutes || 10);
+    const [resolution, setResolution] = useState(user?.profile?.resolution || "");
+    const [dailyGoal, setDailyGoal] = useState(user?.profile?.daily_goal_minutes || 10);
     const [isSaving, setIsSaving] = useState(false);
     const [showSavedMsg, setShowSavedMsg] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
+        // Note: updateUser should update the profile object
+        // This may need backend support to properly update nested profile fields
         updateUser({
-            resolution,
-            dailyGoalMinutes: dailyGoal
+            profile: {
+                ...user?.profile,
+                resolution,
+                daily_goal_minutes: dailyGoal
+            }
         });
         setTimeout(() => {
             setIsSaving(false);
@@ -44,9 +49,9 @@ export default function ProfilePage() {
         { label: "Timeline", value: user.onboardingResponses.timeline },
     ] : [
         // Fallback for existing users in demo
-        { label: "Role", value: user?.profession || "Professional" },
+        { label: "Role", value: user?.profile?.profession || "Professional" },
         { label: "Learning Pace", value: "Steady Growth" },
-        { label: "Commitment", value: `${user?.dailyGoalMinutes || 10} Minutes` },
+        { label: "Commitment", value: `${user?.profile?.daily_goal_minutes || 10} Minutes` },
     ];
 
     const hasNoResponses = !user?.onboardingResponses;
