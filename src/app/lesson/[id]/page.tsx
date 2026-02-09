@@ -67,14 +67,35 @@ export default function LessonPage() {
         }
 
         setIsAdapting(true);
-        setTimeout(() => {
+
+        let newDifficulty = 3;
+        // Map adaptation type to difficulty
+        // simplify -> 1
+        // concise -> 5
+        // examples -> 3 (but re-fetches latest video for that context)
+        if (type === "simplify") newDifficulty = 1;
+        else if (type === "concise" || type === "get_to_the_point") newDifficulty = 5;
+
+        try {
+            // Fetch the adapted lesson video
+            // The backend router now returns the Cloudinary URL from the cache
+            const data = await ApiService.getLesson(params.id, newDifficulty);
+
+            // Artificial delay for "Personalizing" experience
+            setTimeout(() => {
+                if (data && data.videoUrl) {
+                    setLesson(data);
+                    setVideoSrc(data.videoUrl);
+                } else {
+                    console.error("No video found for adaptation");
+                }
+                setIsAdapting(false);
+            }, 2000);
+
+        } catch (error) {
+            console.error("Failed to adapt lesson:", error);
             setIsAdapting(false);
-            if (params.id === "l01_what_llms_are") {
-                if (type === "simplify") setVideoSrc("/assets/lesson1-toohard.mp4");
-                else if (type === "concise") setVideoSrc("/assets/lesson1-tooeasy.mp4");
-                else if (type === "examples") setVideoSrc("/assets/lesson1-examples.mp4");
-            }
-        }, 2000);
+        }
     };
 
     if (!lesson) return <div className="min-h-screen pt-20 text-center">Loading Lesson...</div>;
