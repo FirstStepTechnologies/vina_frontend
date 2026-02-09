@@ -68,9 +68,9 @@ export default function CheckpointQuizPage() {
         if (passed) {
             // Gamification Logic for Checkpoint
             const quizMins = 2; // Fixed time for assessment
-            const newMinutesToday = progress.minutesToday + quizMins;
+            const newMinutesToday = progress.minutes_today + quizMins;
             const dailyGoal = user?.dailyGoalMinutes || 10;
-            const reachedGoal = newMinutesToday >= dailyGoal && progress.minutesToday < dailyGoal;
+            const reachedGoal = newMinutesToday >= dailyGoal && progress.minutes_today < dailyGoal;
             const diamondReward = passed ? 50 : 0; // Bonus for passing skip-ahead
 
             // Update Global State
@@ -78,14 +78,14 @@ export default function CheckpointQuizPage() {
             addMinutes(quizMins);
             addDiamonds(diamondReward);
 
-            const isFirstOfToday = progress.minutesToday === 0;
+            const isFirstOfToday = progress.minutes_today === 0;
             if (isFirstOfToday) incrementStreak();
 
             setCelebrationStats({
                 diamondsEarned: diamondReward,
                 streakEarned: isFirstOfToday,
                 minutesToday: newMinutesToday,
-                minutesThisWeek: progress.minutesThisWeek + quizMins,
+                minutesThisWeek: progress.minutes_this_week + quizMins,
                 dailyGoalAchieved: reachedGoal,
                 dailyGoalMinutes: dailyGoal
             });

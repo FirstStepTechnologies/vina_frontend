@@ -10,8 +10,8 @@ export function ResolutionHUD() {
     const { user } = useUser();
     const { progress } = useProgress();
 
-    const dailyGoal = user?.dailyGoalMinutes || 10;
-    const minutesToday = progress.minutesToday || 0;
+    const dailyGoal = user?.profile?.daily_goal_minutes || 10;
+    const minutesToday = progress.minutes_today || 0;
     const progressPercent = Math.min(100, Math.round((minutesToday / dailyGoal) * 100));
 
     // Calculate last 7 days for consistency tracker
@@ -45,7 +45,7 @@ export function ResolutionHUD() {
                             <div>
                                 <h3 className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-0.5">My 2026 Resolution</h3>
                                 <p className="text-sm font-bold text-teal-900 leading-tight">
-                                    {user?.resolution || "Set your learning resolution in Profile"}
+                                    {user?.profile?.resolution || "Set your learning resolution in Profile"}
                                 </p>
                             </div>
                         </div>

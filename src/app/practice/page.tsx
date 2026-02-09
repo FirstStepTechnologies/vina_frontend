@@ -32,7 +32,7 @@ export default function PracticePage() {
         dailyGoalMinutes: 0
     });
 
-    const hasCompletedLessons = progress.completedLessons.length > 0;
+    const hasCompletedLessons = progress.completed_lessons.length > 0;
     // Simple check for "today" practice
     const today = new Date().toISOString().split("T")[0];
     const hasPracticedToday = progress.lastPracticeDate === today;
@@ -68,9 +68,9 @@ export default function PracticePage() {
 
         // Gamification Logic for Practice
         const practiceMins = 2; // Fixed time for daily challenge
-        const newMinutesToday = progress.minutesToday + practiceMins;
+        const newMinutesToday = progress.minutes_today + practiceMins;
         const dailyGoal = user?.dailyGoalMinutes || 10;
-        const reachedGoal = newMinutesToday >= dailyGoal && progress.minutesToday < dailyGoal;
+        const reachedGoal = newMinutesToday >= dailyGoal && progress.minutes_today < dailyGoal;
         const diamondReward = finalScore * 10; // 10 pts per correct answer
 
         // Update Global State
@@ -82,14 +82,14 @@ export default function PracticePage() {
         addDiamonds(diamondReward);
         addMinutes(practiceMins);
 
-        const isFirstOfToday = progress.minutesToday === 0;
+        const isFirstOfToday = progress.minutes_today === 0;
         if (isFirstOfToday) incrementStreak();
 
         setCelebrationStats({
             diamondsEarned: diamondReward,
             streakEarned: isFirstOfToday,
             minutesToday: newMinutesToday,
-            minutesThisWeek: progress.minutesThisWeek + practiceMins,
+            minutesThisWeek: progress.minutes_this_week + practiceMins,
             dailyGoalAchieved: reachedGoal,
             dailyGoalMinutes: dailyGoal
         });
@@ -216,7 +216,7 @@ export default function PracticePage() {
                     </Card>
 
                     <p className="text-xs font-black text-center text-teal-900/30 uppercase tracking-[0.2em] mt-auto pb-8">
-                        L01-L{progress.completedLessons.length} REVIEW
+                        L01-L{progress.completed_lessons.length} REVIEW
                     </p>
                 </div>
             )}

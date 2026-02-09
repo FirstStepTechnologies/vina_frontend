@@ -11,10 +11,10 @@ export default function ProgressPage() {
     const { progress } = useProgress();
     const { user } = useUser();
 
-    const completionPercent = Math.round((progress.completedLessons.length / 17) * 100);
+    const completionPercent = Math.round((progress.completed_lessons.length / 17) * 100);
 
     // Get recent activity
-    const recentLessons = progress.completedLessons
+    const recentLessons = progress.completed_lessons
         .slice()
         .reverse()
         .slice(0, 3)
@@ -61,7 +61,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mb-3">
                             <Clock size={28} className="text-teal-600" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-teal-900 leading-none">{progress.minutesToday || 0}</span>
+                        <span className="text-2xl font-black text-teal-900 leading-none">{progress.minutes_today || 0}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-teal-400 mt-2">Mins Today</span>
                     </Card>
 
@@ -70,7 +70,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3">
                             <CheckCircle size={28} className="text-purple-600" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-purple-900 leading-none">{progress.completedLessons.length}</span>
+                        <span className="text-2xl font-black text-purple-900 leading-none">{progress.completed_lessons.length}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 mt-2">Lessons</span>
                     </Card>
                 </div>
@@ -91,7 +91,7 @@ export default function ProgressPage() {
                             </div>
                         </div>
                         <p className="text-sm font-bold text-teal-800 leading-relaxed italic">
-                            "By spending {progress.totalLearningTimeSeconds / 60 >= 1 ? Math.floor(progress.totalLearningTimeSeconds / 60) : progress.minutesToday} minutes on Vina, you've funded an equal amount of education for children in need. Your learning empowers the world."
+                            "By spending {progress.total_learning_time_seconds / 60 >= 1 ? Math.floor(progress.total_learning_time_seconds / 60) : progress.minutes_today} minutes on Vina, you've funded an equal amount of education for children in need. Your learning empowers the world."
                         </p>
                     </div>
                 </Card>
@@ -109,7 +109,7 @@ export default function ProgressPage() {
                         />
                     </div>
                     <p className="text-[10px] font-black text-gray-400 mt-3 uppercase tracking-widest">
-                        {progress.completedLessons.length} OF 17 LESSONS COMPLETED
+                        {progress.completed_lessons.length} OF 17 LESSONS COMPLETED
                     </p>
                 </div>
 
