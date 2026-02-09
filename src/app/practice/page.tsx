@@ -12,7 +12,7 @@ import { QuizQuestion } from "@/components/ui/quiz-question";
 import { CelebrationOverlay } from "@/app/lesson/[id]/components/CelebrationOverlay";
 
 export default function PracticePage() {
-    const { progress, updateProgress, addMinutes, addDiamonds, incrementStreak } = useProgress();
+    const { progress, updateProgress, addMinutes, addDiamonds } = useProgress();
     const { user } = useUser();
 
     const [questions, setQuestions] = useState<IQuizQuestion[]>([]);
@@ -26,16 +26,17 @@ export default function PracticePage() {
     const [celebrationStats, setCelebrationStats] = useState({
         diamondsEarned: 0,
         streakEarned: false,
-        minutesToday: 0,
-        minutesThisWeek: 0,
+        minutes_today: 0,
+        minutes_this_week: 0,
+        minutes_total: 0,
         dailyGoalAchieved: false,
         dailyGoalMinutes: 0
     });
 
     const hasCompletedLessons = progress.completed_lessons.length > 0;
-    // Simple check for "today" practice
-    const today = new Date().toISOString().split("T")[0];
-    const hasPracticedToday = progress.lastPracticeDate === today;
+    // Note: lastPracticeDate field doesn't exist in VinaProgress type
+    // For now, we'll always allow practice (can be enhanced later)
+    const hasPracticedToday = false; // Disabled until backend supports this field
 
     useEffect(() => {
         if (hasPracticedToday) {
@@ -69,27 +70,27 @@ export default function PracticePage() {
         // Gamification Logic for Practice
         const practiceMins = 2; // Fixed time for daily challenge
         const newMinutesToday = progress.minutes_today + practiceMins;
-        const dailyGoal = user?.dailyGoalMinutes || 10;
+        const dailyGoal = user?.profile?.daily_goal_minutes || 10;
         const reachedGoal = newMinutesToday >= dailyGoal && progress.minutes_today < dailyGoal;
         const diamondReward = finalScore * 10; // 10 pts per correct answer
 
-        // Update Global State
-        updateProgress({
-            lastPracticeDate: today,
-            practicePointsToday: diamondReward,
-        });
+        // Update Global State - removed lastPracticeDate and practicePointsToday as they don't exist in VinaProgress type
+        // These would need to be added to the backend type definition if needed
 
         addDiamonds(diamondReward);
         addMinutes(practiceMins);
 
         const isFirstOfToday = progress.minutes_today === 0;
-        if (isFirstOfToday) incrementStreak();
+        if (isFirstOfToday) {
+            updateProgress({ streak: progress.streak + 1 });
+        }
 
         setCelebrationStats({
             diamondsEarned: diamondReward,
             streakEarned: isFirstOfToday,
-            minutesToday: newMinutesToday,
-            minutesThisWeek: progress.minutes_this_week + practiceMins,
+            minutes_today: newMinutesToday,
+            minutes_this_week: progress.minutes_this_week + practiceMins,
+            minutes_total: progress.minutes_total + practiceMins,
             dailyGoalAchieved: reachedGoal,
             dailyGoalMinutes: dailyGoal
         });

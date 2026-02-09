@@ -15,7 +15,7 @@ export default function CheckpointQuizPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const { user } = useUser();
-    const { progress, completeLesson, addMinutes, addDiamonds, incrementStreak } = useProgress();
+    const { progress, completeLesson, addMinutes, addDiamonds, updateProgress } = useProgress();
 
     const [questions, setQuestions] = useState<IQuizQuestion[]>([]);
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -28,8 +28,9 @@ export default function CheckpointQuizPage() {
     const [celebrationStats, setCelebrationStats] = useState({
         diamondsEarned: 0,
         streakEarned: false,
-        minutesToday: 0,
-        minutesThisWeek: 0,
+        minutes_today: 0,
+        minutes_this_week: 0,
+        minutes_total: 0,
         dailyGoalAchieved: false,
         dailyGoalMinutes: 0
     });
@@ -69,23 +70,26 @@ export default function CheckpointQuizPage() {
             // Gamification Logic for Checkpoint
             const quizMins = 2; // Fixed time for assessment
             const newMinutesToday = progress.minutes_today + quizMins;
-            const dailyGoal = user?.dailyGoalMinutes || 10;
+            const dailyGoal = user?.profile?.daily_goal_minutes || 10;
             const reachedGoal = newMinutesToday >= dailyGoal && progress.minutes_today < dailyGoal;
             const diamondReward = passed ? 50 : 0; // Bonus for passing skip-ahead
 
             // Update Global State
-            completeLesson(params.id, score, questions.length);
+            completeLesson(params.id);
             addMinutes(quizMins);
             addDiamonds(diamondReward);
 
             const isFirstOfToday = progress.minutes_today === 0;
-            if (isFirstOfToday) incrementStreak();
+            if (isFirstOfToday) {
+                updateProgress({ streak: progress.streak + 1 });
+            }
 
             setCelebrationStats({
                 diamondsEarned: diamondReward,
                 streakEarned: isFirstOfToday,
-                minutesToday: newMinutesToday,
-                minutesThisWeek: progress.minutes_this_week + quizMins,
+                minutes_today: newMinutesToday,
+                minutes_this_week: progress.minutes_this_week + quizMins,
+                minutes_total: progress.minutes_total + quizMins,
                 dailyGoalAchieved: reachedGoal,
                 dailyGoalMinutes: dailyGoal
             });
