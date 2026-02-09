@@ -20,10 +20,10 @@ export const MOCK_LESSONS: Lesson[] = [
         prerequisites: ["l01_what_llms_are"],
     },
     {
-        lessonId: "l03_why_outputs_vary",
+        lessonId: "l03_prompting_basics",
         lessonNumber: 3,
-        lessonName: "Why Outputs Vary",
-        shortTitle: "Output Variation",
+        lessonName: "Prompting Basics",
+        shortTitle: "Prompting 101",
         topicGroup: "The Foundations",
         estimatedDuration: 4,
         prerequisites: ["l02_tokens_context"],
@@ -31,39 +31,38 @@ export const MOCK_LESSONS: Lesson[] = [
     {
         lessonId: "l04_where_llms_excel",
         lessonNumber: 4,
-        lessonName: "Where LLMs Excel",
-        shortTitle: "LLM Strengths",
+        lessonName: "Where LLMs Excel & Fail",
+        shortTitle: "LLM Capability",
         topicGroup: "The Foundations",
-        estimatedDuration: 3,
-        prerequisites: ["l03_why_outputs_vary"],
+        estimatedDuration: 4,
+        prerequisites: ["l03_prompting_basics"],
     },
     {
         lessonId: "l05_hallucinations",
         lessonNumber: 5,
-        lessonName: "Hallucinations & Accuracy",
+        lessonName: "Understanding Hallucinations",
         shortTitle: "Hallucinations",
-        topicGroup: "Risks & Limitations",
+        topicGroup: "Risks & Reliability",
         estimatedDuration: 5,
         prerequisites: ["l04_where_llms_excel"],
     },
-    // Adding a few more for the mock
     {
         lessonId: "l06_bias_issues",
         lessonNumber: 6,
-        lessonName: "Bias in LLMs",
-        shortTitle: "Bias Issues",
-        topicGroup: "Risks & Limitations",
+        lessonName: "Bias & Safety Issues",
+        shortTitle: "Bias & Safety",
+        topicGroup: "Risks & Reliability",
         estimatedDuration: 4,
         prerequisites: ["l05_hallucinations"],
     },
     {
-        lessonId: "l17_final_project",
-        lessonNumber: 17,
-        lessonName: "Putting it all together",
-        shortTitle: "Final Project",
-        topicGroup: "Advanced",
-        estimatedDuration: 10,
-        prerequisites: ["l16_advanced_prompting"], // simplified for mock
+        lessonId: "l07_data_privacy",
+        lessonNumber: 7,
+        lessonName: "Data Privacy & Security",
+        shortTitle: "Data Privacy",
+        topicGroup: "Risks & Reliability",
+        estimatedDuration: 3,
+        prerequisites: ["l06_bias_issues"],
     }
 ];
 
@@ -95,6 +94,20 @@ export const MOCK_QUIZ_QUESTIONS: Record<string, QuizQuestion[]> = {
         },
         {
             id: "q_l01_03",
+            text: "Which is an example of an LLM?",
+            options: [
+                { text: "Microsoft Excel", is_correct: false },
+                { text: "GPT-4", is_correct: true },
+                { text: "Adobe Photoshop", is_correct: false },
+                { text: "Linux", is_correct: false }
+            ],
+            correctAnswer: "GPT-4",
+            explanation: "GPT-4 is a popular Large Language Model developed by OpenAI."
+        }
+    ],
+    "l03_prompting_basics": [
+        {
+            id: "q_l03_01", // ID kept for simplicity, content mismatch accepted as mock
             text: "Which is an example of an LLM?",
             options: [
                 { text: "Microsoft Excel", is_correct: false },
