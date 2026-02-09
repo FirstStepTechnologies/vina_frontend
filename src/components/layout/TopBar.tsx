@@ -17,7 +17,7 @@ export function TopBar() {
 
     if (!showTopBar) return null;
 
-    const initials = user?.profession ? user.profession.split(' ').map(w => w[0]).join('').substring(0, 2) : "User";
+    const initials = user?.profile?.profession ? user.profile.profession.split(' ').map(w => w[0]).join('').substring(0, 2) : "U";
 
     return (
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 mb-0">
@@ -45,10 +45,10 @@ export function TopBar() {
                                 <span className="text-sm font-bold text-gray-700">{progress.streak}</span>
                             </div>
 
-                            {/* Points */}
-                            <div className="flex items-center gap-1.5" aria-label={`${progress.totalPoints} points`}>
+                            {/* Diamonds */}
+                            <div className="flex items-center gap-1.5" aria-label={`${progress.diamonds} diamonds`}>
                                 <span className="text-xl">💎</span>
-                                <span className="text-sm font-bold text-gray-700">{progress.totalPoints}</span>
+                                <span className="text-sm font-bold text-gray-700">{progress.diamonds}</span>
                             </div>
                         </>
                     )}
