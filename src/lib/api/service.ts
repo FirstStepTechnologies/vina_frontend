@@ -19,16 +19,29 @@ export class ApiService {
 
     static async register(email: string, fullName: string): Promise<Token> {
         // For Hackathon, we use a fixed password or generate one
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password: "password123", fullName }),
-        });
-        const data = await this.handleResponse<Token>(response);
-        if (data.access_token) {
-            localStorage.setItem("vina_token", data.access_token);
+        const url = `${API_BASE_URL}/auth/register`;
+        console.log('[API] Registering user at:', url);
+        console.log('[API] API_BASE_URL:', API_BASE_URL);
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password: "password123", fullName }),
+            });
+            const data = await this.handleResponse<Token>(response);
+            if (data.access_token) {
+                localStorage.setItem("vina_token", data.access_token);
+            }
+            return data;
+        } catch (error) {
+            console.error('[API] Registration failed:', error);
+            console.error('[API] Error details:', {
+                message: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            throw error;
         }
-        return data;
     }
 
     static async login(email: string): Promise<Token> {
