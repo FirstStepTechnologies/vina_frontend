@@ -85,9 +85,13 @@ export class ApiService {
 
 
     static async getLesson(lessonId: string, difficulty: number = 3, profession?: string, adaptation?: string): Promise<Lesson> {
+        console.log(`[API] getLesson called with: id=${lessonId}, diff=${difficulty}, prof=${profession}, adapt=${adaptation}`);
         const professionParam = profession ? `&profession=${encodeURIComponent(profession)}` : '';
         const adaptationParam = adaptation ? `&adaptation=${encodeURIComponent(adaptation)}` : '';
-        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}?difficulty=${difficulty}${professionParam}${adaptationParam}`, {
+        const url = `${API_BASE_URL}/lessons/${lessonId}?difficulty=${difficulty}${professionParam}${adaptationParam}`;
+        console.log(`[API] Fetching URL: ${url}`);
+
+        const response = await fetch(url, {
             headers: this.getAuthHeader(),
         });
         return this.handleResponse<Lesson>(response);
