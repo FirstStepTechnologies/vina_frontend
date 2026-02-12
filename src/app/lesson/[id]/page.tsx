@@ -81,7 +81,7 @@ export default function LessonPage() {
             // Fetch the adapted lesson video
             // The backend router now returns the Cloudinary URL from the cache
             const profession = user?.profile?.profession;  // Get profession from user context
-            const data = await ApiService.getLesson(params.id, newDifficulty, profession);
+            const data = await ApiService.getLesson(params.id, newDifficulty, profession, type);
 
             // Artificial delay for "Personalizing" experience
             setTimeout(() => {
