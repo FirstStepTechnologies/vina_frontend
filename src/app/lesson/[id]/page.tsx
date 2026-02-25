@@ -89,7 +89,14 @@ export default function LessonPage() {
                     setLesson(data);
                     setVideoSrc(data.videoUrl);
                 } else {
-                    console.error("No video found for adaptation");
+                    // Backend returned no video for this adaptation.
+                    // This can happen if the adapted video hasn't been generated yet.
+                    // Keep the current video playing and surface a console warning.
+                    console.warn(
+                        `Adaptation '${type}' returned no video (difficulty=${newDifficulty}). ` +
+                        `Keeping current video. Backend response:`,
+                        data
+                    );
                 }
                 setIsAdapting(false);
             }, 2000);
