@@ -104,7 +104,9 @@ export default function PersonalisationFlow() {
             }
 
             // 1. Ensure user exists (Silent Register/Login)
-            const fullName = "Vina Learner"; // Default or pull from elsewhere
+            // Generate a unique identifier so demo users don't share the same global 'vina.learner@example.com' account progress bucket
+            const demoHash = Math.random().toString(36).substring(2, 8);
+            const fullName = `Learner ${demoHash}`;
             const authData = await ApiService.ensureUser(fullName);
 
             const resolution = selections.goal === 'specific'
