@@ -25,6 +25,7 @@ export interface VinaProfile {
 export interface VinaProgress {
     current_lesson_id: string;
     completed_lessons: string[];
+    daily_goal_history?: Record<string, boolean>;
     diamonds: number;
     streak: number;
     minutes_today: number;

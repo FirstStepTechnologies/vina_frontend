@@ -15,19 +15,30 @@ export function ResolutionHUD() {
     const progressPercent = Math.min(100, Math.round((minutesToday / dailyGoal) * 100));
 
     // Calculate last 7 days for consistency tracker
-    const getDaysOfWeek = () => {
-        const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const getLast7Days = () => {
+        const days = [];
+        const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         const today = new Date();
-        const currentDay = today.getDay(); // 0 is Sunday
-        // Reorder to start from Monday if desired, or just show last 7 days
-        // Let's show the current week (Mon-Sun)
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+
+            // Format to local YYYY-MM-DD
+            const offset = d.getTimezoneOffset() * 60000;
+            const dateStr = new Date(d.getTime() - offset).toISOString().split('T')[0];
+            const dayLetter = dayNames[d.getDay()];
+
+            days.push({
+                dateStr,
+                dayLetter,
+                isToday: i === 0
+            });
+        }
         return days;
     };
 
-    const days = getDaysOfWeek();
-    // In a real app, we'd map these to actual dates in progress.dailyGoalHistory
-    // For this demo, we'll simulate some history based on streak and current progress
-    const mockHistory = [true, true, true, minutesToday >= dailyGoal, false, false, false];
+    const last7Days = getLast7Days();
 
     return (
         <div className="mx-6 mt-4 mb-2 animate-slide-up" id="tour-resolution">
@@ -93,26 +104,32 @@ export function ResolutionHUD() {
                                 <span className="text-[9px] font-black text-teal-900 uppercase">{minutesToday}/{dailyGoal} mins</span>
                             </div>
                             <div className="flex justify-between gap-1.5">
-                                {days.map((day, i) => (
-                                    <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
-                                        <div className={cn(
-                                            "w-full aspect-square rounded-lg flex items-center justify-center transition-all duration-500",
-                                            mockHistory[i]
-                                                ? "bg-teal-500 text-white shadow-[0_4px_12px_rgba(20,184,166,0.3)]"
-                                                : "bg-teal-900/5 text-teal-900/20"
-                                        )}>
-                                            {mockHistory[i] ? (
-                                                <div className="w-1 h-1 bg-white rounded-full" />
-                                            ) : (
-                                                <div className="w-1 h-1 bg-current rounded-full" />
-                                            )}
+                                {last7Days.map((day, i) => {
+                                    const isCompleted = day.isToday
+                                        ? minutesToday >= dailyGoal
+                                        : !!(progress.daily_goal_history && progress.daily_goal_history[day.dateStr]);
+
+                                    return (
+                                        <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
+                                            <div className={cn(
+                                                "w-full aspect-square rounded-lg flex items-center justify-center transition-all duration-500",
+                                                isCompleted
+                                                    ? "bg-teal-500 text-white shadow-[0_4px_12px_rgba(20,184,166,0.3)]"
+                                                    : "bg-teal-900/5 text-teal-900/20"
+                                            )}>
+                                                {isCompleted ? (
+                                                    <div className="w-1 h-1 bg-white rounded-full" />
+                                                ) : (
+                                                    <div className="w-1 h-1 bg-current rounded-full" />
+                                                )}
+                                            </div>
+                                            <span className={cn(
+                                                "text-[8px] font-black",
+                                                day.isToday ? "text-teal-600" : "text-gray-400"
+                                            )}>{day.dayLetter}</span>
                                         </div>
-                                        <span className={cn(
-                                            "text-[8px] font-black",
-                                            i === (new Date().getDay() || 7) - 1 ? "text-teal-600" : "text-gray-400"
-                                        )}>{day}</span>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                             <p className="mt-3 text-[10px] font-bold text-teal-700/70 italic">
                                 {progressPercent >= 100
