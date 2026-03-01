@@ -105,11 +105,11 @@ export function CelebrationOverlay({ isOpen, onContinue, buttonText = "Continue 
 
                         <div className="mt-4 pt-4 border-t border-teal-200/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-teal-500">
                             <span>Week total: {stats.minutes_this_week} mins</span>
-                            <div className="flex gap-1">
+                            {/* <div className="flex gap-1">
                                 {[...Array(5)].map((_, i) => (
                                     <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i < 3 ? "bg-teal-500" : "bg-teal-200")} />
                                 ))}
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 </div>
