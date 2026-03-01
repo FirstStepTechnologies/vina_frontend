@@ -35,14 +35,12 @@ export default function QuizResultsPage() {
 
     useEffect(() => {
         if (passed) {
-            completeLesson(params.id);
+            completeLesson(params.id, score, total);
 
             // Gamification Logic
             const diamondReward = score * 10;
             const dailyGoal = user?.profile?.daily_goal_minutes || 10;
             const reachedGoal = progress.minutes_today >= dailyGoal && (progress.minutes_today - 2) < dailyGoal; // Approximation
-
-            addDiamonds(diamondReward);
 
             setCelebrationStats({
                 diamondsEarned: diamondReward,

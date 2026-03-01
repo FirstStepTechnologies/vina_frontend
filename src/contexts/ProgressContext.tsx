@@ -25,7 +25,7 @@ interface ProgressContextType {
     isLoading: boolean;
     updateProgress: (updates: Partial<VinaProgress>) => void;
     unlockLesson: (lessonId: string) => void;
-    completeLesson: (lessonId: string) => Promise<void>;
+    completeLesson: (lessonId: string, score?: number, total?: number) => Promise<void>;
     addMinutes: (minutes: number) => Promise<void>;
     addDiamonds: (amount: number) => void;
     resetProgress: () => void;
@@ -83,9 +83,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         setProgress(prev => ({ ...prev, current_lesson_id: lessonId }));
     };
 
-    const completeLesson = async (lessonId: string) => {
+    const completeLesson = async (lessonId: string, score: number = 0, total: number = 0) => {
         try {
-            const result = await ApiService.completeLesson(lessonId);
+            const result = await ApiService.completeLesson(lessonId, score, total);
             // Result is full progress or summary from backend
             if (result.user_id) {
                 setProgress(result);
