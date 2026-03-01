@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface VideoPlayerProps {
     src: string;
-    onEnded: () => void;
+    onEnded: (durationSeconds: number) => void;
     className?: string;
     poster?: string;
 }
@@ -41,15 +41,17 @@ export function VideoPlayer({ src, onEnded, className, poster }: VideoPlayerProp
             }
         };
 
-        video.addEventListener("timeupdate", updateProgress);
-        video.addEventListener("ended", () => {
+        const handleVideoEnded = () => {
             setIsPlaying(false);
-            onEnded();
-        });
+            onEnded(video.duration || 0);
+        };
+
+        video.addEventListener("timeupdate", updateProgress);
+        video.addEventListener("ended", handleVideoEnded);
 
         return () => {
             video.removeEventListener("timeupdate", updateProgress);
-            video.removeEventListener("ended", onEnded);
+            video.removeEventListener("ended", handleVideoEnded);
         };
     }, [onEnded]);
 
