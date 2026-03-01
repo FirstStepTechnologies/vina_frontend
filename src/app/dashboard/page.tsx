@@ -96,7 +96,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h1 className="text-2xl font-black text-teal-900 drop-shadow-sm leading-none">
-                            LLM Foundations
+                            LLM Foundations {user?.profile?.profession ? `for ${user.profile.profession}` : ''}
                         </h1>
                         <p className="text-sm text-teal-600/70 font-medium mt-1">Your learning path</p>
                     </div>
