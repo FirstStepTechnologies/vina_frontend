@@ -64,6 +64,13 @@ export class ApiService {
         return this.handleResponse<VinaUser>(response);
     }
 
+    static async getProgress(): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/user/progress`, {
+            headers: this.getAuthHeader(),
+        });
+        return this.handleResponse<any>(response);
+    }
+
     static async updateProfile(updates: any): Promise<VinaUser> {
         const response = await fetch(`${API_BASE_URL}/user/profile`, {
             method: "PATCH",
