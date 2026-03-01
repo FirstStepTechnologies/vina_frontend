@@ -14,31 +14,40 @@ export function ResolutionHUD() {
     const minutesToday = progress.minutes_today || 0;
     const progressPercent = Math.min(100, Math.round((minutesToday / dailyGoal) * 100));
 
-    // Calculate last 7 days for consistency tracker
-    const getLast7Days = () => {
+    // Calculate current calendar week (Sunday to Saturday) for consistency tracker
+    const getCurrentWeekDays = () => {
         const days = [];
         const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         const today = new Date();
+        const currentDayOfWeek = today.getDay(); // 0 is Sunday, 6 is Saturday
 
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(today.getDate() - i);
+        // Find the most recent Sunday
+        const lastSunday = new Date(today);
+        lastSunday.setDate(today.getDate() - currentDayOfWeek);
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(lastSunday);
+            d.setDate(lastSunday.getDate() + i);
 
             // Format to local YYYY-MM-DD
             const offset = d.getTimezoneOffset() * 60000;
             const dateStr = new Date(d.getTime() - offset).toISOString().split('T')[0];
             const dayLetter = dayNames[d.getDay()];
 
+            // It's a "future" day if its timestamp is strictly greater than today's (at midnight)
+            const isFuture = d > today && d.toDateString() !== today.toDateString();
+
             days.push({
                 dateStr,
                 dayLetter,
-                isToday: i === 0
+                isToday: i === currentDayOfWeek,
+                isFuture
             });
         }
         return days;
     };
 
-    const last7Days = getLast7Days();
+    const currentWeekDays = getCurrentWeekDays();
 
     return (
         <div className="mx-6 mt-4 mb-2 animate-slide-up" id="tour-resolution">
@@ -104,10 +113,13 @@ export function ResolutionHUD() {
                                 <span className="text-[9px] font-black text-teal-900 uppercase">{minutesToday}/{dailyGoal} mins</span>
                             </div>
                             <div className="flex justify-between gap-1.5">
-                                {last7Days.map((day, i) => {
-                                    const isCompleted = day.isToday
-                                        ? minutesToday >= dailyGoal
-                                        : !!(progress.daily_goal_history && progress.daily_goal_history[day.dateStr]);
+                                {currentWeekDays.map((day, i) => {
+                                    // If future, never completed
+                                    const isCompleted = day.isFuture ? false : (
+                                        day.isToday
+                                            ? minutesToday >= dailyGoal
+                                            : !!(progress.daily_goal_history && progress.daily_goal_history[day.dateStr])
+                                    );
 
                                     return (
                                         <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
@@ -120,12 +132,15 @@ export function ResolutionHUD() {
                                                 {isCompleted ? (
                                                     <div className="w-1 h-1 bg-white rounded-full" />
                                                 ) : (
-                                                    <div className="w-1 h-1 bg-current rounded-full" />
+                                                    <div className={cn(
+                                                        "w-1 h-1 bg-current rounded-full",
+                                                        day.isFuture ? "opacity-30" : "opacity-100"
+                                                    )} />
                                                 )}
                                             </div>
                                             <span className={cn(
                                                 "text-[8px] font-black",
-                                                day.isToday ? "text-teal-600" : "text-gray-400"
+                                                day.isToday ? "text-teal-600" : (day.isFuture ? "text-gray-300" : "text-gray-400")
                                             )}>{day.dayLetter}</span>
                                         </div>
                                     );

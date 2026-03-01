@@ -44,9 +44,10 @@ export default function LessonPage() {
         load();
     }, [params.id, router, progress, user]);
 
-    const handleVideoEnd = async () => {
-        // Calculate minutes based on lesson estimatedDuration (e.g. 5)
-        const lessonMins = lesson?.estimatedDuration || 5;
+    const handleVideoEnd = async (durationSeconds?: number) => {
+        // Calculate exact minutes based on actual video duration, fallback to estimate
+        const exactMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : 0;
+        const lessonMins = (exactMinutes > 0) ? exactMinutes : (lesson?.estimatedDuration || 5);
 
         // Update Learning Time (Impact) - This handles sync to server
         // Fire and forget - don't block navigation on sync
