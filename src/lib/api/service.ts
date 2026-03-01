@@ -103,7 +103,10 @@ export class ApiService {
     static async completeLesson(lessonId: string, score: number = 0, total: number = 0): Promise<any> {
         const response = await fetch(`${API_BASE_URL}/user/progress/lesson/${lessonId}/complete`, {
             method: "POST",
-            headers: this.getAuthHeader(),
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getAuthHeader(),
+            },
             body: JSON.stringify({ score, total }),
         });
         return this.handleResponse<any>(response);
