@@ -20,7 +20,8 @@ const STEPS = [
             { label: "Clinical Researcher", value: "Clinical Researcher", sub: "" },
             { label: "HR Manager", value: "HR Manager", sub: "" },
             { label: "Project Manager", value: "Project Manager", sub: "" },
-            { label: "Marketing Manager", value: "Marketing Manager", sub: "" }
+            { label: "Product Manager", value: "Product Manager", sub: "" },
+            { label: "Investment Analyst", value: "Investment Analyst", sub: "" }
         ]
     },
     {
@@ -94,7 +95,9 @@ export default function PersonalisationFlow() {
                 "Clinical Researcher": "Pharma/Biotech",
                 "HR Manager": "Tech Company",
                 "Marketing Manager": "E-Commerce",
-                "Project Manager": "Software/Tech"
+                "Project Manager": "Software/Tech",
+                "Product Manager": "FinTech",
+                "Investment Analyst": "Venture Capital"
             };
 
             const industry = industryMap[selections.role] || "Technology";
