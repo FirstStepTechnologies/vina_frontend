@@ -77,7 +77,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
             const result = await ApiService.completeLesson(lessonId);
             // Result is full progress or summary from backend
             if (result.user_id) {
-                setProgress(result);
+                setProgress(result.progress);
             } else {
                 // Fallback locally if backend returns something else
                 setProgress(prev => ({
