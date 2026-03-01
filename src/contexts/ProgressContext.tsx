@@ -40,21 +40,32 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const fetchProgress = async () => {
-            if (user && user.progress) {
-                setProgress(user.progress);
-            } else {
-                const stored = localStorage.getItem("vina_progress");
-                if (stored) {
-                    try {
-                        const parsed = JSON.parse(stored);
-                        setProgress({ ...DEFAULT_PROGRESS, ...parsed });
-                    } catch (e) {
-                        console.error("Failed to parse progress", e);
-                    }
+            // First, load from localStorage for immediate UI display
+            const stored = localStorage.getItem("vina_progress");
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    setProgress({ ...DEFAULT_PROGRESS, ...parsed });
+                } catch (e) {
+                    console.error("Failed to parse progress cache", e);
                 }
             }
+
+            // Then asynchronously fetch the absolutely latest progress from the backend server
+            if (user) {
+                try {
+                    const liveProgress = await ApiService.getProgress();
+                    if (liveProgress && liveProgress.user_id) {
+                        setProgress(liveProgress);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch live progress from backend", e);
+                }
+            }
+
             setIsLoading(false);
         };
+
         fetchProgress();
     }, [user]);
 
