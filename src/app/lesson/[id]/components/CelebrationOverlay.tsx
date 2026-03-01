@@ -100,7 +100,7 @@ export function CelebrationOverlay({ isOpen, onContinue, buttonText = "Continue 
                         </div>
 
                         <p className="text-sm font-bold text-teal-800/80 leading-relaxed italic">
-                            "You just funded 3 minutes of education for a child in need. Your learning empowers others."
+                            "You have funded a total of {stats.minutes_total} minutes of education for a child in need. Your learning empowers others."
                         </p>
 
                         <div className="mt-4 pt-4 border-t border-teal-200/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-teal-500">

@@ -106,6 +106,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         setProgress(prev => ({
             ...prev,
             minutes_today: prev.minutes_today + minutes,
+            minutes_this_week: prev.minutes_this_week + minutes,
+            minutes_total: prev.minutes_total + minutes,
             total_learning_time_seconds: prev.total_learning_time_seconds + (minutes * 60)
         }));
 
