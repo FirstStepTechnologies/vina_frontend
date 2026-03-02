@@ -21,7 +21,8 @@ const STEPS = [
             { label: "HR Manager", value: "HR Manager", sub: "" },
             { label: "Project Manager", value: "Project Manager", sub: "" },
             { label: "Product Manager", value: "Product Manager", sub: "" },
-            { label: "Investment Analyst", value: "Investment Analyst", sub: "" }
+            { label: "Investment Analyst", value: "Investment Analyst", sub: "" },
+            { label: "Marketing Manager", value: "Marketing Manager", sub: "" }
         ]
     },
     {
