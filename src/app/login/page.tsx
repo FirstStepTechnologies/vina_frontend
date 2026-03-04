@@ -60,11 +60,25 @@ export default function LoginPage() {
         else setError(msg);
     };
 
-    const afterFirebaseToken = async (firebaseIdToken: string, redirectToIntro: boolean) => {
-        const token = await ApiService.firebaseLogin(firebaseIdToken);
-        login(token);
-        // New users should go through onboarding; returning users straight to dashboard
-        router.replace(redirectToIntro ? "/intro" : "/dashboard");
+    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean) => {
+        const token = await ApiService.firebaseLogin(idToken);
+
+        // Temporarily store just the access token so getProfile can use it
+        localStorage.setItem("vina_token", token.access_token);
+
+        // Fetch the full rich user profile from backend (includes .profile struct)
+        const fullProfile = await ApiService.getProfile();
+
+        // Login with the properly structured user
+        login({
+            ...token,
+            user: fullProfile
+        });
+
+        // Determine if they are completely new and missing profession responses
+        const isNewUser = explicitRedirectToIntro || !fullProfile?.onboardingResponses || Object.keys(fullProfile.onboardingResponses).length === 0;
+
+        router.replace(isNewUser ? "/intro" : "/dashboard");
     };
 
     const handleGoogle = async () => {
@@ -72,12 +86,7 @@ export default function LoginPage() {
         setIsLoading("google");
         try {
             const idToken = await signInWithGoogle();
-            // We don't know yet if it's a new or returning user — the backend knows.
-            // Redirect to /intro if the profile has no profession set (handled by /intro check).
-            const token = await ApiService.firebaseLogin(idToken);
-            login(token);
-            const isNewUser = !token.user?.onboardingResponses || Object.keys(token.user?.onboardingResponses ?? {}).length === 0;
-            router.replace(isNewUser ? "/intro" : "/dashboard");
+            await handleTokenAndRedirect(idToken, false);
         } catch (err) {
             handleError(err);
         } finally {
@@ -98,7 +107,7 @@ export default function LoginPage() {
             } else {
                 idToken = await loginWithEmail(email, password);
             }
-            await afterFirebaseToken(idToken, isNewUser);
+            await handleTokenAndRedirect(idToken, isNewUser);
         } catch (err) {
             handleError(err);
         } finally {
