@@ -29,12 +29,18 @@ export default function LoginPage() {
 
     const handleError = (err: unknown) => {
         const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-        // Make Firebase error messages friendlier
+        console.error('[Login] Auth error:', msg);
+        // Firebase client-side error codes
         if (msg.includes("auth/email-already-in-use")) setError("That email is already registered. Try signing in instead.");
         else if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password") || msg.includes("auth/invalid-credential")) setError("Incorrect email or password.");
         else if (msg.includes("auth/weak-password")) setError("Password must be at least 6 characters.");
         else if (msg.includes("auth/popup-closed-by-user") || msg.includes("auth/cancelled-popup-request")) setError(null); // user dismissed — not an error
         else if (msg.includes("auth/too-many-requests")) setError("Too many attempts. Please try again later.");
+        else if (msg.includes("auth/unauthorized-domain")) setError("This domain is not authorised in Firebase. Add it to Firebase Console → Authentication → Authorised Domains.");
+        // Backend error — Firebase token verification failed (usually means FIREBASE_SERVICE_ACCOUNT_JSON not set on server)
+        else if (msg.toLowerCase().includes("could not validate firebase") || msg.toLowerCase().includes("firebase authentication is not configured")) setError("Authentication service is not configured on the server. Please contact support.");
+        // Network error — server unreachable
+        else if (msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")) setError("Could not reach the server. Please check your connection and try again.");
         else setError(msg);
     };
 
