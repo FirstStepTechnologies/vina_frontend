@@ -25,16 +25,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
             if (token && storedUser) {
                 try {
+                    // Set optimistic user right away to avoid flashes if possible
+                    // But in page.tsx if isLoading is true we shouldn't flash anyway.
                     setUser(JSON.parse(storedUser));
-                    // Optionally refresh profile from server
+
+                    // Verify the session is still valid.
                     const freshUser = await ApiService.getProfile();
                     setUser(freshUser);
                     localStorage.setItem("vina_user", JSON.stringify(freshUser));
                 } catch (e) {
                     console.error("Session invalid or server error", e);
-                    // logout() if token expired?
+                    // Invalid token or server issue, clean up session
+                    setUser(null);
+                    localStorage.removeItem("vina_token");
+                    localStorage.removeItem("vina_user");
+                    localStorage.removeItem("vina_progress");
                 }
             }
+
+            // Critical: Only mark as not loading AFTER we have verified the session
             setIsLoading(false);
         };
 

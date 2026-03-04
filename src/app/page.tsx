@@ -17,8 +17,14 @@ export default function WelcomeScreen() {
     }
   }, [user, isLoading, router]);
 
-  if (isLoading) {
-    return null; // Or a loading spinner
+  // While loading session, or if we have a user (meaning we are about to redirect),
+  // show a clean loading state to prevent flashing the Get Started page.
+  if (isLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin opacity-50"></div>
+      </div>
+    );
   }
 
   return (

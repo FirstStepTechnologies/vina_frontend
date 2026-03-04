@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
@@ -17,7 +17,14 @@ type Mode = "signin" | "signup";
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login } = useUser();
+    const { login, user, isLoading: isUserLoading } = useUser();
+
+    // Prevent flashing the login screen if already authenticated
+    useEffect(() => {
+        if (!isUserLoading && user) {
+            router.replace("/dashboard");
+        }
+    }, [user, isUserLoading, router]);
 
     const [mode, setMode] = useState<Mode>("signin");
     const [email, setEmail] = useState("");
@@ -26,6 +33,15 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState<string | null>(null); // which button is loading
     const [error, setError] = useState<string | null>(null);
+
+    // If session is loading or if we are skipping login, show spinner
+    if (isUserLoading || user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 via-white to-blue-50">
+                <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin opacity-50"></div>
+            </div>
+        );
+    }
 
     const handleError = (err: unknown) => {
         const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
