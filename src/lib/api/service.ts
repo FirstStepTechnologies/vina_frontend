@@ -18,11 +18,8 @@ export class ApiService {
     }
 
     static async register(email: string, fullName: string): Promise<Token> {
-        // For Hackathon, we use a fixed password or generate one
+        // DEPRECATED: use firebaseLogin() instead. Kept for backward compatibility.
         const url = `${API_BASE_URL}/auth/register`;
-        console.log('[API] Registering user at:', url);
-        console.log('[API] API_BASE_URL:', API_BASE_URL);
-
         try {
             const response = await fetch(url, {
                 method: "POST",
@@ -36,19 +33,33 @@ export class ApiService {
             return data;
         } catch (error) {
             console.error('[API] Registration failed:', error);
-            console.error('[API] Error details:', {
-                message: error instanceof Error ? error.message : 'Unknown error',
-                stack: error instanceof Error ? error.stack : undefined
-            });
             throw error;
         }
     }
 
     static async login(email: string): Promise<Token> {
+        // DEPRECATED: use firebaseLogin() instead. Kept for backward compatibility.
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password: "password123" }),
+        });
+        const data = await this.handleResponse<Token>(response);
+        if (data.access_token) {
+            localStorage.setItem("vina_token", data.access_token);
+        }
+        return data;
+    }
+
+    /**
+     * Exchange a Firebase ID token for a Vina backend JWT.
+     * This is the primary sign-in method for Google and Email/Password users.
+     */
+    static async firebaseLogin(idToken: string): Promise<Token> {
+        const response = await fetch(`${API_BASE_URL}/auth/firebase`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id_token: idToken }),
         });
         const data = await this.handleResponse<Token>(response);
         if (data.access_token) {
@@ -185,7 +196,8 @@ export class ApiService {
         return this.handleResponse<any>(response);
     }
 
-    // Helper for finding/creating a user profile during onboarding
+    // DEPRECATED: Helper for finding/creating a user profile during onboarding.
+    // Use Google Sign-In or email/password via the login page instead.
     static async ensureUser(fullName: string): Promise<Token> {
         const email = `${fullName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
         try {

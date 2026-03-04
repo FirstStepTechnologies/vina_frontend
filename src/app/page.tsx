@@ -62,7 +62,7 @@ export default function WelcomeScreen() {
           <Button
             variant="default" // Uses the new gradient default
             className="w-full text-lg h-16 shadow-2xl shadow-teal-500/20 rounded-2xl"
-            onClick={() => router.push("/intro")}
+            onClick={() => router.push("/login")}
           >
             Get Started
           </Button>
