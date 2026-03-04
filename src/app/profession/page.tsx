@@ -17,12 +17,12 @@ const STEPS = [
         title: "What's your role?",
         description: "We'll adapt the course content to match your daily work.",
         options: [
-            { label: "Clinical Researcher", value: "Clinical Researcher", sub: "" },
             { label: "HR Manager", value: "HR Manager", sub: "" },
-            { label: "Project Manager", value: "Project Manager", sub: "" },
-            { label: "Product Manager", value: "Product Manager", sub: "" },
             { label: "Investment Analyst", value: "Investment Analyst", sub: "" },
-            { label: "Marketing Manager", value: "Marketing Manager", sub: "" }
+            { label: "Marketing Manager", value: "Marketing Manager", sub: "" },
+            { label: "Product Manager", value: "Product Manager", sub: "" },
+            { label: "Project Manager", value: "Project Manager", sub: "" },
+            { label: "Clinical Researcher", value: "Clinical Researcher", sub: "" },
         ]
     },
     {
@@ -62,7 +62,7 @@ export default function PersonalisationFlow() {
     const router = useRouter();
     // Multi-step State with Default Values
     const [step, setStep] = useState(0);
-    const { user, login } = useUser();
+    const { user, updateUser } = useUser();
     const [selections, setSelections] = useState<Record<string, string>>(() => {
         // Pre-fill from existing user profile if available
         if (user?.onboardingResponses) {
@@ -107,17 +107,11 @@ export default function PersonalisationFlow() {
                 resetProgress();
             }
 
-            // 1. Ensure user exists (Silent Register/Login)
-            // Generate a unique identifier so demo users don't share the same global 'vina.learner@example.com' account progress bucket
-            const demoHash = Math.random().toString(36).substring(2, 8);
-            const fullName = `Learner ${demoHash}`;
-            const authData = await ApiService.ensureUser(fullName);
-
             const resolution = selections.goal === 'specific'
                 ? selections.specific_goal
                 : STEPS.find(s => s.id === 'goal')?.options.find(o => o.value === selections.goal)?.label || selections.goal;
 
-            // 2. Map and Update Profile on server
+            // Update Profile on server
             const profileUpdates = {
                 profession: selections.role,
                 industry: industry,
@@ -134,20 +128,7 @@ export default function PersonalisationFlow() {
                 }
             };
 
-            const updatedProfile = await ApiService.updateProfile(profileUpdates);
-
-            // 3. Merge and Login in context
-            // We merge authData (which has token and base user) with updatedProfile (which has the latest resolution/responses)
-            const finalUser = {
-                ...authData.user,
-                ...updatedProfile,
-                onboardingResponses: profileUpdates.onboarding_responses
-            };
-
-            login({
-                ...authData,
-                user: finalUser as any
-            });
+            await updateUser(profileUpdates);
 
             // Navigate directly to dashboard
             router.replace("/dashboard");

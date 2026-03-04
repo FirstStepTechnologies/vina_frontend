@@ -195,15 +195,4 @@ export class ApiService {
         });
         return this.handleResponse<any>(response);
     }
-
-    // DEPRECATED: Helper for finding/creating a user profile during onboarding.
-    // Use Google Sign-In or email/password via the login page instead.
-    static async ensureUser(fullName: string): Promise<Token> {
-        const email = `${fullName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
-        try {
-            return await this.login(email);
-        } catch (e) {
-            return await this.register(email, fullName);
-        }
-    }
 }
