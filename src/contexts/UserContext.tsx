@@ -1,14 +1,16 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { VinaUser, Token } from "@/lib/api/types";
 import { ApiService } from "@/lib/api/service";
+import { signOutFromFirebase } from "@/lib/firebase/auth";
 
 interface UserContextType {
     user: VinaUser | null;
     isLoading: boolean;
     login: (token: Token) => void;
-    logout: () => void;
+    logout: () => Promise<void>;
     updateUser: (updates: any) => Promise<void>;
 }
 
@@ -17,6 +19,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<VinaUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchInitialUser = async () => {
@@ -56,11 +59,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("vina_user", JSON.stringify(token.user));
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await signOutFromFirebase();
+        } catch (error) {
+            console.error("Firebase logout error:", error);
+        }
         setUser(null);
         localStorage.removeItem("vina_token");
         localStorage.removeItem("vina_user");
         localStorage.removeItem("vina_progress");
+        router.replace("/");
     };
 
     const updateUser = async (updates: any) => {
