@@ -15,7 +15,7 @@
 import { getSessionId } from './session';
 
 const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    process.env.NEXT_PUBLIC_API_URL || "https://vina-backend-6snh.onrender.com/api/v1";
 
 /**
  * Send a single analytics event to the backend.
@@ -32,7 +32,7 @@ export async function trackEvent(
             typeof window !== 'undefined' ? localStorage.getItem('vina_token') : null;
         if (!token) return; // Don't track unauthenticated events
 
-        await fetch(`${API_BASE}/api/v1/events`, {
+        await fetch(`${API_BASE}/events`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
