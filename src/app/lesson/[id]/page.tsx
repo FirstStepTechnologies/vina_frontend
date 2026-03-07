@@ -49,13 +49,15 @@ export default function LessonPage() {
     // Fire lesson_started event once lesson data is loaded
     useEffect(() => {
         if (!lesson) return;
-        lessonStartedAt.current = Date.now();
+        const now = Date.now();
+        lessonStartedAt.current = now;
+        sessionStorage.setItem(`lesson_started_at_${params.id}`, now.toString());
         trackEvent('lesson_started', {
             lesson_id: params.id,
             difficulty: (progress as any).currentDifficulty || 3,
             video_url: lesson.videoUrl || null,
         });
-    }, [lesson]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [lesson, params.id, progress]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleVideoEnd = async (durationSeconds?: number) => {
         // Calculate exact minutes based on actual video duration, fallback to estimate

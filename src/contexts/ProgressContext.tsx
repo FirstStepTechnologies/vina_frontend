@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { VinaProgress } from "@/lib/api/types";
 import { useUser } from "./UserContext";
 import { ApiService } from "@/lib/api/service";
+import { getSessionId } from "@/lib/session";
 
 const DEFAULT_PROGRESS: VinaProgress = {
     current_lesson_id: "l01_what_llms_are",
@@ -85,7 +86,17 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     const completeLesson = async (lessonId: string, score: number = 0, total: number = 0) => {
         try {
-            const result = await ApiService.completeLesson(lessonId, score, total);
+            const sessionId = getSessionId();
+            let totalLessonTimeS: number | undefined = undefined;
+            const startedAtStr = sessionStorage.getItem(`lesson_started_at_${lessonId}`);
+            if (startedAtStr) {
+                const startedAt = parseInt(startedAtStr, 10);
+                if (!isNaN(startedAt)) {
+                    totalLessonTimeS = Math.floor((Date.now() - startedAt) / 1000);
+                }
+            }
+
+            const result = await ApiService.completeLesson(lessonId, score, total, totalLessonTimeS, sessionId);
             // Result is full progress or summary from backend
             if (result.user_id) {
                 setProgress(result);

@@ -111,14 +111,18 @@ export class ApiService {
         return this.handleResponse<Lesson>(response);
     }
 
-    static async completeLesson(lessonId: string, score: number = 0, total: number = 0): Promise<any> {
+    static async completeLesson(lessonId: string, score: number = 0, total: number = 0, totalLessonTimeS?: number, appSessionId?: string): Promise<any> {
+        const payload: any = { score, total };
+        if (totalLessonTimeS !== undefined) payload.total_lesson_time_s = totalLessonTimeS;
+        if (appSessionId) payload.app_session_id = appSessionId;
+
         const response = await fetch(`${API_BASE_URL}/user/progress/lesson/${lessonId}/complete`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 ...this.getAuthHeader(),
             },
-            body: JSON.stringify({ score, total }),
+            body: JSON.stringify(payload),
         });
         return this.handleResponse<any>(response);
     }
