@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ApiService } from "@/lib/api/service";
@@ -8,6 +8,7 @@ import { QuizQuestion as IQuizQuestion } from "@/lib/api/types";
 import { QuizQuestion } from "@/components/ui/quiz-question";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/UserContext";
+import { trackEvent } from "@/lib/analytics";
 
 export default function QuizPage() {
     const router = useRouter();
@@ -18,6 +19,8 @@ export default function QuizPage() {
     const [score, setScore] = useState(0);
     const [showNext, setShowNext] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const quizStartedAt = useRef<number>(Date.now());
+    const questionStartedAt = useRef<number>(Date.now());
 
     useEffect(() => {
         async function load() {
@@ -35,7 +38,28 @@ export default function QuizPage() {
         load();
     }, [params.id, router]);
 
+    // Fire quiz_started event when questions load
+    useEffect(() => {
+        if (questions.length === 0) return;
+        quizStartedAt.current = Date.now();
+        questionStartedAt.current = Date.now();
+        trackEvent('quiz_started', {
+            lesson_id: params.id,
+            question_count: questions.length,
+        });
+    }, [questions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const handleAnswer = (selected: string, isCorrect: boolean) => {
+        const timeOnQuestion = Math.round((Date.now() - questionStartedAt.current) / 1000);
+        const currentQ = questions[currentIdx];
+
+        trackEvent('quiz_answer_submitted', {
+            lesson_id: params.id,
+            question_id: currentQ?.id,
+            is_correct: isCorrect,
+            time_on_question_s: timeOnQuestion,
+        });
+
         if (isCorrect) setScore(prev => prev + 1);
 
         // Show next button after interaction
@@ -48,12 +72,18 @@ export default function QuizPage() {
         setShowNext(false);
         if (currentIdx < questions.length - 1) {
             setCurrentIdx(prev => prev + 1);
+            questionStartedAt.current = Date.now(); // Reset per-question timer
         } else {
-            // Finish
-            router.push(`/quiz/${params.id}/results?score=${score + (showNext && questions[currentIdx].correctAnswer ? 0 : 0)}&total=${questions.length}`);
-            // Passing score in query for simplicity, in real app likely via state or POST
-            // Wait, handleAnswer already updated score for the CURRENT question if correct.
-            // So passed score is correct.
+            // Finish — fire quiz_completed before navigating
+            const quizDurationS = Math.round((Date.now() - quizStartedAt.current) / 1000);
+            const finalScore = score; // current score (already updated by handleAnswer)
+            trackEvent('quiz_completed', {
+                lesson_id: params.id,
+                score: finalScore,
+                total: questions.length,
+                quiz_duration_s: quizDurationS,
+            });
+            router.push(`/quiz/${params.id}/results?score=${finalScore}&total=${questions.length}`);
         }
     };
 

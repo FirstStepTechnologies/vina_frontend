@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
@@ -13,6 +13,7 @@ import { AdaptationMenu } from "./components/AdaptationMenu";
 import { useProgress } from "@/contexts/ProgressContext";
 import { useUser } from "@/contexts/UserContext";
 import { CelebrationOverlay } from "./components/CelebrationOverlay";
+import { trackEvent } from "@/lib/analytics";
 
 export default function LessonPage() {
     const router = useRouter();
@@ -24,6 +25,7 @@ export default function LessonPage() {
     const [showAdaptMenu, setShowAdaptMenu] = useState(false);
     const [isAdapting, setIsAdapting] = useState(false);
     const [videoSrc, setVideoSrc] = useState("/assets/lesson1-normal.mp4");
+    const lessonStartedAt = useRef<number | null>(null); // ms timestamp when lesson mounted
 
     useEffect(() => {
         async function load() {
@@ -44,10 +46,29 @@ export default function LessonPage() {
         load();
     }, [params.id, router, progress, user]);
 
+    // Fire lesson_started event once lesson data is loaded
+    useEffect(() => {
+        if (!lesson) return;
+        lessonStartedAt.current = Date.now();
+        trackEvent('lesson_started', {
+            lesson_id: params.id,
+            difficulty: (progress as any).currentDifficulty || 3,
+            video_url: lesson.videoUrl || null,
+        });
+    }, [lesson]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const handleVideoEnd = async (durationSeconds?: number) => {
         // Calculate exact minutes based on actual video duration, fallback to estimate
         const exactMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : 0;
         const lessonMins = (exactMinutes > 0) ? exactMinutes : (lesson?.estimatedDuration || 5);
+
+        // Track video_completed event
+        trackEvent('video_completed', {
+            lesson_id: params.id,
+            watch_seconds: durationSeconds || 0,
+            video_duration_s: durationSeconds || 0,
+            completion_pct: 100,
+        });
 
         // Update Learning Time (Impact) - This handles sync to server
         // Fire and forget - don't block navigation on sync
@@ -77,6 +98,14 @@ export default function LessonPage() {
         // examples -> 3 (but re-fetches latest video for that context)
         if (type === "simplify") newDifficulty = 1;
         else if (type === "concise" || type === "get_to_the_point") newDifficulty = 5;
+
+        // Track lesson_adapted event
+        trackEvent('lesson_adapted', {
+            lesson_id: params.id,
+            adaptation_type: type,
+            from_difficulty: (progress as any).currentDifficulty || 3,
+            to_difficulty: newDifficulty,
+        });
 
         try {
             // Fetch the adapted lesson video
