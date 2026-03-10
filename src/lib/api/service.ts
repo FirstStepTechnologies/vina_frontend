@@ -94,25 +94,32 @@ export class ApiService {
         return this.handleResponse<VinaUser>(response);
     }
 
-    static async getCourseMap(): Promise<Lesson[]> {
-        const response = await fetch(`${API_BASE_URL}/course/map`, {
+    static async getCourses(): Promise<any[]> {
+        const response = await fetch(`${API_BASE_URL}/courses`, {
+            headers: this.getAuthHeader(),
+        });
+        return this.handleResponse<any[]>(response);
+    }
+
+    static async getCourseMap(courseId: string): Promise<Lesson[]> {
+        const response = await fetch(`${API_BASE_URL}/courses/${courseId}/map`, {
             headers: this.getAuthHeader(),
         });
         return this.handleResponse<Lesson[]>(response);
     }
 
 
-    static async getLesson(lessonId: string, difficulty: number = 3, profession?: string, adaptation?: string): Promise<Lesson> {
+    static async getLesson(courseId: string, lessonId: string, difficulty: number = 3, profession?: string, adaptation?: string): Promise<Lesson> {
         const professionParam = profession ? `&profession=${encodeURIComponent(profession)}` : '';
         const adaptationParam = adaptation ? `&adaptation=${encodeURIComponent(adaptation)}` : '';
-        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}?difficulty=${difficulty}${professionParam}${adaptationParam}`, {
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}?course_id=${courseId}&difficulty=${difficulty}${professionParam}${adaptationParam}`, {
             headers: this.getAuthHeader(),
         });
         return this.handleResponse<Lesson>(response);
     }
 
-    static async completeLesson(lessonId: string, score: number = 0, total: number = 0, totalLessonTimeS?: number, appSessionId?: string): Promise<any> {
-        const payload: any = { score, total };
+    static async completeLesson(courseId: string, lessonId: string, score: number = 0, total: number = 0, totalLessonTimeS?: number, appSessionId?: string): Promise<any> {
+        const payload: any = { course_id: courseId, score, total };
         if (totalLessonTimeS !== undefined) payload.total_lesson_time_s = totalLessonTimeS;
         if (appSessionId) payload.app_session_id = appSessionId;
 

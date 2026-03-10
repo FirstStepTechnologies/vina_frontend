@@ -12,7 +12,7 @@ import { QuizQuestion } from "@/components/ui/quiz-question";
 import { CelebrationOverlay } from "@/app/lesson/[id]/components/CelebrationOverlay";
 
 export default function PracticePage() {
-    const { progress, updateProgress, addMinutes, addDiamonds } = useProgress();
+    const { progress, activeCourseId, updateProgress, addMinutes, addDiamonds } = useProgress();
     const { user } = useUser();
 
     const [questions, setQuestions] = useState<IQuizQuestion[]>([]);
@@ -33,7 +33,9 @@ export default function PracticePage() {
         dailyGoalMinutes: 0
     });
 
-    const hasCompletedLessons = progress.completed_lessons.length > 0;
+    const courseProgress = progress.course_progress[activeCourseId] || { completed_lessons: [] };
+    const completedLessons = courseProgress.completed_lessons || [];
+    const hasCompletedLessons = completedLessons.length > 0;
     // Note: lastPracticeDate field doesn't exist in VinaProgress type
     // For now, we'll always allow practice (can be enhanced later)
     const hasPracticedToday = false; // Disabled until backend supports this field
@@ -217,7 +219,7 @@ export default function PracticePage() {
                     </Card>
 
                     <p className="text-xs font-black text-center text-teal-900/30 uppercase tracking-[0.2em] mt-auto pb-8">
-                        L01-L{progress.completed_lessons.length} REVIEW
+                        L01-L{completedLessons.length} REVIEW
                     </p>
                 </div>
             )}

@@ -7,8 +7,8 @@ import { ApiService } from "@/lib/api/service";
 import { getSessionId } from "@/lib/session";
 
 const DEFAULT_PROGRESS: VinaProgress = {
-    current_lesson_id: "l01_what_llms_are",
-    completed_lessons: [],
+    course_progress: {},
+    secondary_track_ids: [],
     diamonds: 0,
     streak: 0,
     minutes_today: 0,
@@ -16,16 +16,16 @@ const DEFAULT_PROGRESS: VinaProgress = {
     minutes_total: 0,
     total_learning_time_seconds: 0,
     pre_assessment_completed: false,
-    starting_lesson: "l01_what_llms_are",
     currentTourStep: 0,
     tourCompleted: false,
 };
 
 interface ProgressContextType {
     progress: VinaProgress;
+    activeCourseId: string;
+    setActiveCourseId: (id: string) => void;
     isLoading: boolean;
     updateProgress: (updates: Partial<VinaProgress>) => void;
-    unlockLesson: (lessonId: string) => void;
     completeLesson: (lessonId: string, score?: number, total?: number) => Promise<void>;
     addMinutes: (minutes: number) => Promise<void>;
     addDiamonds: (amount: number) => void;
@@ -36,8 +36,22 @@ const ProgressContext = createContext<ProgressContextType | undefined>(undefined
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
     const [progress, setProgress] = useState<VinaProgress>(DEFAULT_PROGRESS);
+    const [activeCourseId, setActiveCourseIdState] = useState<string>("c_llm_foundations"); // Default fallback
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useUser();
+
+    // Persist activeCourseId explicitly to local storage
+    useEffect(() => {
+        const storedCourseId = localStorage.getItem("vina_active_course_id");
+        if (storedCourseId) {
+            setActiveCourseIdState(storedCourseId);
+        }
+    }, []);
+
+    const setActiveCourseId = (id: string) => {
+        setActiveCourseIdState(id);
+        localStorage.setItem("vina_active_course_id", id);
+    };
 
     useEffect(() => {
         const fetchProgress = async () => {
@@ -58,6 +72,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                     const liveProgress = await ApiService.getProgress();
                     if (liveProgress && liveProgress.user_id) {
                         setProgress(liveProgress);
+                        if (liveProgress.primary_track_id) {
+                            setActiveCourseIdState(liveProgress.primary_track_id);
+                            localStorage.setItem("vina_active_course_id", liveProgress.primary_track_id);
+                        }
                     }
                 } catch (e) {
                     console.error("Failed to fetch live progress from backend", e);
@@ -80,10 +98,6 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         setProgress(prev => ({ ...prev, ...updates }));
     };
 
-    const unlockLesson = (lessonId: string) => {
-        setProgress(prev => ({ ...prev, current_lesson_id: lessonId }));
-    };
-
     const completeLesson = async (lessonId: string, score: number = 0, total: number = 0) => {
         try {
             const sessionId = getSessionId();
@@ -96,29 +110,41 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            const result = await ApiService.completeLesson(lessonId, score, total, totalLessonTimeS, sessionId);
-            // Result is full progress or summary from backend
+            const result = await ApiService.completeLesson(activeCourseId, lessonId, score, total, totalLessonTimeS, sessionId);
             if (result.user_id) {
                 setProgress(result);
             } else {
-                // Fallback locally if backend returns something else
-                setProgress(prev => ({
-                    ...prev,
-                    completed_lessons: prev.completed_lessons.includes(lessonId)
-                        ? prev.completed_lessons
-                        : [...prev.completed_lessons, lessonId]
-                }));
+                // OPTIMISTIC LOCAL CACHE FALLBACK IF BACKEND SHAPE WEIRD
+                setProgress(prev => {
+                    const courseProgress = prev.course_progress[activeCourseId] || { completed_lessons: [], lesson_scores: {}, current_difficulty: 3 };
+                    if (courseProgress.completed_lessons.includes(lessonId)) return prev;
+                    return {
+                        ...prev,
+                        course_progress: {
+                            ...prev.course_progress,
+                            [activeCourseId]: {
+                                ...courseProgress,
+                                completed_lessons: [...courseProgress.completed_lessons, lessonId]
+                            }
+                        }
+                    };
+                });
             }
         } catch (e) {
             console.error("Failed to complete lesson on server", e);
-            // OPTIMISTIC UPDATE: If server fails (e.g. CORS, Offline), 
-            // complete it locally so user isn't stuck.
+            // OPTIMISTIC UPDATE
             setProgress(prev => {
-                // Avoid duplicates
-                if (prev.completed_lessons.includes(lessonId)) return prev;
+                const courseProgress = prev.course_progress[activeCourseId] || { completed_lessons: [], lesson_scores: {}, current_difficulty: 3 };
+                if (courseProgress.completed_lessons.includes(lessonId)) return prev;
                 return {
                     ...prev,
-                    completed_lessons: [...prev.completed_lessons, lessonId]
+                    course_progress: {
+                        ...prev.course_progress,
+                        [activeCourseId]: {
+                            ...courseProgress,
+                            completed_lessons: [...courseProgress.completed_lessons, lessonId]
+                        }
+                    }
                 };
             });
         }
@@ -159,9 +185,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         <ProgressContext.Provider
             value={{
                 progress,
+                activeCourseId,
+                setActiveCourseId,
                 isLoading,
                 updateProgress,
-                unlockLesson,
                 completeLesson,
                 addMinutes,
                 addDiamonds,

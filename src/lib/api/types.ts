@@ -11,6 +11,7 @@ export interface VinaUser {
     profile?: VinaProfile;
     progress?: VinaProgress;
     onboardingResponses?: Record<string, string>;
+    pre_assessment_completed?: boolean;
 }
 
 export interface VinaProfile {
@@ -22,9 +23,16 @@ export interface VinaProfile {
     resolution?: string;
 }
 
-export interface VinaProgress {
-    current_lesson_id: string;
+export interface CourseProgress {
     completed_lessons: string[];
+    lesson_scores: Record<string, number>;
+    current_difficulty: number;
+}
+
+export interface VinaProgress {
+    course_progress: Record<string, CourseProgress>;
+    primary_track_id?: string;
+    secondary_track_ids: string[];
     daily_goal_history?: Record<string, boolean>;
     diamonds: number;
     streak: number;
@@ -33,7 +41,7 @@ export interface VinaProgress {
     minutes_total: number;
     total_learning_time_seconds: number;
     pre_assessment_completed: boolean;
-    starting_lesson: string;
+    starting_lesson?: string;
     currentTourStep?: number;
     tourCompleted?: boolean;
 }

@@ -22,7 +22,16 @@ export default function LoginPage() {
     // Prevent flashing the login screen if already authenticated
     useEffect(() => {
         if (!isUserLoading && user) {
-            router.replace("/dashboard");
+            const hasOnboarding = user.onboardingResponses && Object.keys(user.onboardingResponses).length > 0;
+            const hasAssessment = user.pre_assessment_completed;
+
+            if (!hasOnboarding) {
+                router.replace("/intro");
+            } else if (!hasAssessment) {
+                router.replace("/pathway");
+            } else {
+                router.replace("/dashboard");
+            }
         }
     }, [user, isUserLoading, router]);
 
@@ -75,10 +84,17 @@ export default function LoginPage() {
             user: fullProfile
         });
 
-        // Determine if they are completely new and missing profession responses
-        const isNewUser = explicitRedirectToIntro || !fullProfile?.onboardingResponses || Object.keys(fullProfile.onboardingResponses).length === 0;
+        // Determine redirection stage
+        const hasOnboarding = fullProfile?.onboardingResponses && Object.keys(fullProfile.onboardingResponses).length > 0;
+        const hasAssessment = fullProfile?.pre_assessment_completed;
 
-        router.replace(isNewUser ? "/intro" : "/dashboard");
+        if (explicitRedirectToIntro || !hasOnboarding) {
+            router.replace("/intro");
+        } else if (!hasAssessment) {
+            router.replace("/pathway");
+        } else {
+            router.replace("/dashboard");
+        }
     };
 
     const handleGoogle = async () => {

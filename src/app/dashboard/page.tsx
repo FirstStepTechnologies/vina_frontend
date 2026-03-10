@@ -14,8 +14,10 @@ import { ResolutionHUD } from "./components/ResolutionHUD";
 export default function Dashboard() {
     const router = useRouter();
     const { user, isLoading: userLoading } = useUser();
-    const { progress, isLoading: progressLoading } = useProgress();
+    const { progress, activeCourseId, setActiveCourseId, isLoading: progressLoading } = useProgress();
     const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [activeCourses, setActiveCourses] = useState<any[]>([]);
+    const [showSwitcher, setShowSwitcher] = useState(false);
     const activeNodeRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -26,13 +28,28 @@ export default function Dashboard() {
             return;
         }
 
-        // Fetch course map
-        async function loadCourse() {
-            const data = await ApiService.getCourseMap();
-            setLessons(data);
+        // Fetch course map and user's active courses metadata
+        async function loadCourseData() {
+            if (activeCourseId) {
+                const [mapData, allCourses] = await Promise.all([
+                    ApiService.getCourseMap(activeCourseId),
+                    ApiService.getCourses()
+                ]);
+
+                setLessons(mapData);
+
+                // Filter to only enrolled courses
+                const enrolled = allCourses.filter((c: any) => progress.course_progress && progress.course_progress[c.courseId]);
+                // If the current active course somehow isn't in progress, include it anyway for safety
+                if (!enrolled.find((c: any) => c.courseId === activeCourseId)) {
+                    const fallback = allCourses.find((c: any) => c.courseId === activeCourseId);
+                    if (fallback) enrolled.push(fallback);
+                }
+                setActiveCourses(enrolled);
+            }
         }
-        loadCourse();
-    }, [user, userLoading, router]);
+        loadCourseData();
+    }, [user, userLoading, router, activeCourseId]);
 
     // Scroll to active node on load
     useEffect(() => {
@@ -41,7 +58,7 @@ export default function Dashboard() {
                 activeNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 500);
         }
-    }, [lessons, progress.current_lesson_id]);
+    }, [lessons]);
 
     if (userLoading || progressLoading) return <div className="min-h-screen pt-20 text-center">Loading...</div>;
 
@@ -72,18 +89,17 @@ export default function Dashboard() {
     };
 
     const getLessonState = (lesson: Lesson) => {
-        if (progress.completed_lessons.includes(lesson.lessonId)) return "completed";
-        const prereqsMet = lesson.prerequisites.length === 0 ||
-            lesson.prerequisites.every(id => progress.completed_lessons.includes(id));
-
-        if (prereqsMet) {
-            const firstIncomplete = lessons.find(l => !progress.completed_lessons.includes(l.lessonId));
-            if (firstIncomplete?.lessonId === lesson.lessonId) return "active";
-        }
-        return "locked";
+        return lesson.status || "locked";
     };
 
+    const completedCount = lessons.filter(l => l.status === "completed").length;
+    const totalCount = lessons.length || 1;
+    const progressPercent = Math.round((completedCount / totalCount) * 100);
+
     const totalHeight = lessons.length * ROW_HEIGHT + 150;
+
+    const currentCourse = activeCourses.find(c => c.courseId === activeCourseId);
+    const courseName = currentCourse ? currentCourse.courseName : "Your Active Track";
 
     return (
         <div className="flex flex-col min-h-screen relative bg-[#f0fdfa]">
@@ -94,11 +110,52 @@ export default function Dashboard() {
             {/* Header */}
             <div className="pt-8 px-6 pb-6 sticky top-0 z-50 border-b border-teal-100/50 backdrop-blur-2xl">
                 <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h1 className="text-2xl font-black text-teal-900 drop-shadow-sm leading-none">
-                            LLM Foundations {user?.profile?.profession ? `for ${user.profile.profession}` : ''}
-                        </h1>
-                        <p className="text-sm text-teal-600/70 font-medium mt-1">Your learning path</p>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSwitcher(!showSwitcher)}
+                            className="flex items-center gap-2 group"
+                        >
+                            <h1 className="text-2xl font-black text-teal-900 drop-shadow-sm leading-none transition-colors group-hover:text-teal-700">
+                                {courseName}
+                            </h1>
+                            <div className={`p-1 bg-teal-100/50 rounded-full transition-transform ${showSwitcher ? 'rotate-180' : ''}`}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-teal-700"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                        </button>
+                        <p className="text-sm text-teal-600/70 font-medium mt-1">
+                            {user?.profile?.profession ? `Tailored for ${user.profile.profession}` : 'Your learning path'}
+                        </p>
+
+                        {/* Dropdown Switcher */}
+                        {showSwitcher && activeCourses.length > 1 && (
+                            <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-teal-100 p-2 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                                <p className="text-[10px] font-black uppercase text-teal-600/60 px-3 py-2 tracking-wider">Switch Track</p>
+                                {activeCourses.map(c => (
+                                    <button
+                                        key={c.courseId}
+                                        onClick={() => {
+                                            setActiveCourseId(c.courseId);
+                                            setShowSwitcher(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-3 rounded-xl flex items-center justify-between transition-colors ${activeCourseId === c.courseId ? 'bg-teal-50 text-teal-900 font-bold hover:bg-teal-50' : 'hover:bg-gray-50 text-gray-700'}`}
+                                    >
+                                        <span className="truncate pr-4">{c.courseName}</span>
+                                        {activeCourseId === c.courseId && <div className="w-2 h-2 rounded-full bg-teal-500 shadow-sm" />}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {showSwitcher && activeCourses.length <= 1 && (
+                            <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-teal-100 p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                                <p className="text-sm text-gray-600 font-medium mb-3">You don't have any other active tracks.</p>
+                                <button
+                                    onClick={() => router.push('/portfolio')}
+                                    className="w-full bg-teal-50 text-teal-700 text-xs font-bold py-2 rounded-xl transition-colors hover:bg-teal-100"
+                                >
+                                    Discover Courses
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center gap-1.5" id="tour-stats">
                         {/* Diamonds */}
@@ -127,12 +184,12 @@ export default function Dashboard() {
                 <div className="mt-2 flex flex-col gap-2">
                     <div className="flex justify-between text-xs font-black text-teal-700/80 uppercase tracking-[0.2em]">
                         <span>Progress</span>
-                        <span>{Math.round((progress.completed_lessons.length / 17) * 100)}%</span>
+                        <span>{progressPercent}%</span>
                     </div>
                     <div className="w-full h-2 bg-teal-900/5 rounded-full overflow-hidden border border-teal-100/50">
                         <div
                             className="h-full bg-gradient-to-r from-teal-400 via-blue-400 to-teal-400 transition-all duration-1000 ease-out relative"
-                            style={{ width: `${(progress.completed_lessons.length / 17) * 100}%` }}
+                            style={{ width: `${progressPercent}%` }}
                         >
                             <div className="absolute inset-0 bg-white/30 animate-pulse-slow" />
                         </div>

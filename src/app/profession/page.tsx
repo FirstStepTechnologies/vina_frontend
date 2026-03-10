@@ -130,8 +130,8 @@ export default function PersonalisationFlow() {
 
             await updateUser(profileUpdates);
 
-            // Navigate directly to dashboard
-            router.replace("/dashboard");
+            // Navigate to pathway screen
+            router.replace("/pathway");
         } catch (error) {
             console.error("Failed to create profile", error);
             setIsSubmitting(false);

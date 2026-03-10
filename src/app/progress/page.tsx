@@ -8,13 +8,15 @@ import { MOCK_LESSONS } from "@/lib/api/mock-data";
 import { cn } from "@/lib/utils";
 
 export default function ProgressPage() {
-    const { progress } = useProgress();
+    const { progress, activeCourseId } = useProgress();
     const { user } = useUser();
 
-    const completionPercent = Math.round((progress.completed_lessons.length / 17) * 100);
+    const courseProgress = progress.course_progress[activeCourseId] || { completed_lessons: [] };
+    const completedLessons = courseProgress.completed_lessons || [];
+    const completionPercent = Math.round((completedLessons.length / 17) * 100);
 
     // Get recent activity
-    const recentLessons = progress.completed_lessons
+    const recentLessons = completedLessons
         .slice()
         .reverse()
         .slice(0, 3)
@@ -70,7 +72,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3">
                             <CheckCircle size={28} className="text-purple-600" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-purple-900 leading-none">{progress.completed_lessons.length}</span>
+                        <span className="text-2xl font-black text-purple-900 leading-none">{completedLessons.length}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 mt-2">Lessons</span>
                     </Card>
                 </div>
@@ -109,7 +111,7 @@ export default function ProgressPage() {
                         />
                     </div>
                     <p className="text-[10px] font-black text-gray-400 mt-3 uppercase tracking-widest">
-                        {progress.completed_lessons.length} OF 17 LESSONS COMPLETED
+                        {completedLessons.length} OF 17 LESSONS COMPLETED
                     </p>
                 </div>
 

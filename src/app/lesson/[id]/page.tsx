@@ -19,7 +19,7 @@ export default function LessonPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const { user } = useUser();
-    const { progress, addMinutes, addDiamonds } = useProgress();
+    const { progress, activeCourseId, addMinutes, addDiamonds } = useProgress();
 
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [showAdaptMenu, setShowAdaptMenu] = useState(false);
@@ -32,7 +32,7 @@ export default function LessonPage() {
             // Use currentDifficulty from progress or default to 3
             const diff = (progress as any).currentDifficulty || 3;
             const profession = user?.profile?.profession;  // Get profession from user context
-            const data = await ApiService.getLesson(params.id, diff, profession);
+            const data = await ApiService.getLesson(activeCourseId, params.id, diff, profession);
             if (data) {
                 setLesson(data);
                 if (data.videoUrl) {
@@ -113,7 +113,7 @@ export default function LessonPage() {
             // Fetch the adapted lesson video
             // The backend router now returns the Cloudinary URL from the cache
             const profession = user?.profile?.profession;  // Get profession from user context
-            const data = await ApiService.getLesson(params.id, newDifficulty, profession, type);
+            const data = await ApiService.getLesson(activeCourseId, params.id, newDifficulty, profession, type);
 
             // Artificial delay for "Personalizing" experience
             setTimeout(() => {

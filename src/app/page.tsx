@@ -13,7 +13,16 @@ export default function WelcomeScreen() {
   // Auto-redirect if user already exists
   useEffect(() => {
     if (!isLoading && user) {
-      router.replace("/dashboard");
+      const hasOnboarding = user.onboardingResponses && Object.keys(user.onboardingResponses).length > 0;
+      const hasAssessment = user.pre_assessment_completed;
+
+      if (!hasOnboarding) {
+        router.replace("/intro");
+      } else if (!hasAssessment) {
+        router.replace("/pathway");
+      } else {
+        router.replace("/dashboard");
+      }
     }
   }, [user, isLoading, router]);
 

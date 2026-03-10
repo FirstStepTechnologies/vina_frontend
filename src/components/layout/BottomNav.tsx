@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, BarChart3, User } from "lucide-react"; // Using standard Lucide icons
+import { Home, ClipboardList, BarChart3, User, BookMarked } from "lucide-react"; // Using standard Lucide icons
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -26,6 +26,12 @@ export function BottomNav() {
             label: "Home",
             route: "/dashboard",
             icon: Home,
+        },
+        {
+            id: "portfolio",
+            label: "Courses",
+            route: "/portfolio",
+            icon: BookMarked,
         },
         {
             id: "practice",
