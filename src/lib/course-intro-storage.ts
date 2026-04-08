@@ -6,8 +6,26 @@ type CourseIntroStatusRecord = {
     updatedAt: string;
 };
 
-const STORAGE_KEY = "vina_course_intro_status";
+const STORAGE_KEY = "vina_course_intro_status_v2";
 const UNAVAILABLE_TTL_MS = 1000 * 60 * 60 * 6;
+
+function getCurrentUserId(): string {
+    if (typeof window === "undefined") return "anonymous";
+
+    const rawUser = window.localStorage.getItem("vina_user");
+    if (!rawUser) return "anonymous";
+
+    try {
+        const parsed = JSON.parse(rawUser) as { id?: unknown };
+        return typeof parsed.id === "string" && parsed.id ? parsed.id : "anonymous";
+    } catch {
+        return "anonymous";
+    }
+}
+
+function getScopedCourseKey(courseId: string): string {
+    return `${getCurrentUserId()}::${courseId}`;
+}
 
 function normalizeStatusRecord(value: unknown): CourseIntroStatusRecord | null {
     if (typeof value === "string" && (value === "completed" || value === "skipped_unavailable")) {
@@ -61,7 +79,7 @@ function writeStatuses(statuses: Record<string, CourseIntroStatusRecord>) {
 }
 
 export function getCourseIntroStatus(courseId: string): CourseIntroStatus | null {
-    return readStatuses()[courseId]?.status || null;
+    return readStatuses()[getScopedCourseKey(courseId)]?.status || null;
 }
 
 export function hasHandledCourseIntro(courseId: string): boolean {
@@ -69,7 +87,7 @@ export function hasHandledCourseIntro(courseId: string): boolean {
 }
 
 export function isCourseIntroTemporarilyUnavailable(courseId: string): boolean {
-    const record = readStatuses()[courseId];
+    const record = readStatuses()[getScopedCourseKey(courseId)];
     if (!record || record.status !== "skipped_unavailable") {
         return false;
     }
@@ -84,7 +102,7 @@ export function isCourseIntroTemporarilyUnavailable(courseId: string): boolean {
 
 export function markCourseIntroCompleted(courseId: string) {
     const statuses = readStatuses();
-    statuses[courseId] = {
+    statuses[getScopedCourseKey(courseId)] = {
         status: "completed",
         updatedAt: new Date().toISOString(),
     };
@@ -93,7 +111,7 @@ export function markCourseIntroCompleted(courseId: string) {
 
 export function markCourseIntroUnavailable(courseId: string) {
     const statuses = readStatuses();
-    statuses[courseId] = {
+    statuses[getScopedCourseKey(courseId)] = {
         status: "skipped_unavailable",
         updatedAt: new Date().toISOString(),
     };
