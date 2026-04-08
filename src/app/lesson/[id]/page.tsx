@@ -62,6 +62,26 @@ function getStepTitle(step: LessonExperienceStep | null, fallbackTitle: string) 
     return fallbackTitle;
 }
 
+function getResourceOpenUrl(resource: LessonResource) {
+    const rawUrl = resource.url;
+    if (!rawUrl) return null;
+
+    const isEditableTemplate = resource.kind === "template" || resource.kind === "worksheet";
+    if (!isEditableTemplate) {
+        return ApiService.buildApiUrl(rawUrl);
+    }
+
+    if (rawUrl.endsWith(".md")) {
+        return ApiService.buildApiUrl(rawUrl.replace(/\.md$/, ".docx"));
+    }
+
+    if (rawUrl.endsWith(".csv")) {
+        return ApiService.buildApiUrl(rawUrl.replace(/\.csv$/, ".xlsx"));
+    }
+
+    return ApiService.buildApiUrl(rawUrl);
+}
+
 export default function LessonPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
@@ -1042,7 +1062,8 @@ export default function LessonPage() {
 
                                 <div className="space-y-4">
                                     {currentStep.resources.map((resource: LessonResource) => {
-                                        const isOpenable = Boolean(resource.url);
+                                        const resourceOpenUrl = getResourceOpenUrl(resource);
+                                        const isOpenable = Boolean(resourceOpenUrl);
 
                                         return (
                                             <div
@@ -1076,7 +1097,7 @@ export default function LessonPage() {
                                                     {isOpenable ? (
                                                         <Button
                                                             className="shrink-0"
-                                                            onClick={() => window.open(resource.url ? ApiService.buildApiUrl(resource.url) : "", "_blank", "noopener,noreferrer")}
+                                                            onClick={() => window.open(resourceOpenUrl || "", "_blank", "noopener,noreferrer")}
                                                         >
                                                             Open
                                                         </Button>
