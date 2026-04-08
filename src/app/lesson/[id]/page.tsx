@@ -889,7 +889,7 @@ export default function LessonPage() {
                                             placeholder={
                                                 currentStep.interaction.interaction_type === "predict"
                                                     ? "Write your best guess in a sentence or two."
-                                                    : "What is the one idea you want to remember when you leave this lesson?"
+                                                    : undefined
                                             }
                                             className="min-h-[140px] w-full resize-none rounded-[1.25rem] border border-white/10 bg-black/20 px-4 py-3 text-sm font-medium text-white outline-none placeholder:text-white/40"
                                         />
