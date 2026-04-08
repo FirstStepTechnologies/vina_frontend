@@ -9,6 +9,8 @@ import { useUser } from "@/contexts/UserContext";
 import { ApiService } from "@/lib/api/service";
 import {
     signInWithGoogle,
+    registerWithEmail,
+    loginWithEmail,
 } from "@/lib/firebase/auth";
 import { Token } from "@/lib/api/types";
 
@@ -94,8 +96,8 @@ export default function LoginPage() {
         }
     };
 
-    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean) => {
-        const token = await ApiService.firebaseLogin(idToken);
+    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean, submittedFullName?: string) => {
+        const token = await ApiService.firebaseLogin(idToken, submittedFullName);
         await handleBackendTokenAndRedirect(token, explicitRedirectToIntro);
     };
 
@@ -118,11 +120,12 @@ export default function LoginPage() {
         setIsLoading("email");
         try {
             if (mode === "signup") {
-                const token = await ApiService.register(email, fullName, password);
-                await handleBackendTokenAndRedirect(token, true);
+                const submittedFullName = fullName.trim();
+                const idToken = await registerWithEmail(email, password, submittedFullName);
+                await handleTokenAndRedirect(idToken, true, submittedFullName);
             } else {
-                const token = await ApiService.login(email, password);
-                await handleBackendTokenAndRedirect(token, false);
+                const idToken = await loginWithEmail(email, password);
+                await handleTokenAndRedirect(idToken, false);
             }
         } catch (err) {
             handleError(err);

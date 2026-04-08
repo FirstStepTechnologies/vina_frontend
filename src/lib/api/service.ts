@@ -143,11 +143,11 @@ export class ApiService {
      * Exchange a Firebase ID token for a Vina backend JWT.
      * This is the primary sign-in method for Google and Email/Password users.
      */
-    static async firebaseLogin(idToken: string): Promise<Token> {
+    static async firebaseLogin(idToken: string, fullName?: string): Promise<Token> {
         const response = await fetch(`${API_BASE_URL}/auth/firebase`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id_token: idToken }),
+            body: JSON.stringify({ id_token: idToken, ...(fullName ? { full_name: fullName } : {}) }),
         });
         const data = await this.handleResponse<Token>(response);
         if (data.access_token) {
