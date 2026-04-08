@@ -70,28 +70,23 @@ export function VinaAssistant() {
         {
             id: 6,
             page: "/lesson",
-            title: "AI Adaptation 🔮",
-            message: "This is the 'Adapt' icon. Vina re-structures content for you instantly based on your role context.",
-            targetId: "tour-adapt",
-            action: () => {
-                router.push("/quiz/l01_what_llms_are");
-            }
-        },
-        {
-            id: 7,
-            page: "/quiz",
-            title: "Knowledge Check ✅",
-            message: "Quizzes validate what you've learned. Passing them unlocks the next nodes on your pathway.",
-            targetId: "tour-quiz",
+            title: "Guided Flow ✨",
+            message: "Lessons now unfold in short segments with quick checkpoints and reflection moments, so the experience keeps moving without feeling heavy.",
             action: () => {
                 router.push("/profile");
             }
         },
         {
-            id: 8,
+            id: 7,
             page: "/profile",
             title: "My Personalisation 👤",
-            message: "Your profile stores your professional goals and AI preferences. You can update your 2026 Resolution here anytime.",
+            message: "Your profile stores your professional goals and learning context, and it helps Vina request the right lesson experience for you.",
+        },
+        {
+            id: 8,
+            page: "/profile",
+            title: "Stay Aligned",
+            message: "You can update your 2026 Resolution here anytime to keep your learning habit anchored to a real goal.",
             targetId: "tour-profile",
         },
         {

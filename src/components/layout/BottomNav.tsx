@@ -14,9 +14,11 @@ export function BottomNav() {
         pathname === "/intro" ||
         pathname.includes("/profession") ||
         pathname.includes("/assessment") ||
-        pathname.includes("/lesson/")
+        pathname.includes("/lesson/") ||
+        (pathname.includes("/course/") && pathname.endsWith("/intro"))
     ) {
         if (pathname.includes("/lesson/")) return null;
+        if (pathname.includes("/course/") && pathname.endsWith("/intro")) return null;
         if (pathname === "/" || pathname === "/intro" || pathname === "/profession" || pathname === "/assessment") return null;
     }
 

@@ -28,10 +28,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
             if (token && storedUser) {
                 try {
-                    // Set optimistic user right away to avoid flashes if possible
-                    // But in page.tsx if isLoading is true we shouldn't flash anyway.
-                    setUser(JSON.parse(storedUser));
-
                     // Verify the session is still valid.
                     const freshUser = await ApiService.getProfile();
                     setUser(freshUser);

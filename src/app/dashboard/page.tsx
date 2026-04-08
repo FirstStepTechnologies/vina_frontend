@@ -8,15 +8,24 @@ import { useUser } from "@/contexts/UserContext";
 import { ApiService } from "@/lib/api/service";
 import { Lesson } from "@/lib/api/types";
 import { CourseMapNode } from "./components/CourseMapNode";
+import { Button } from "@/components/ui/button";
+import { isCourseIntroTemporarilyUnavailable } from "@/lib/course-intro-storage";
 import { cn } from "@/lib/utils";
 import { ResolutionHUD } from "./components/ResolutionHUD";
+
+interface CourseSummary {
+    courseId: string;
+    courseName: string;
+}
 
 export default function Dashboard() {
     const router = useRouter();
     const { user, isLoading: userLoading } = useUser();
     const { progress, activeCourseId, setActiveCourseId, isLoading: progressLoading } = useProgress();
     const [lessons, setLessons] = useState<Lesson[]>([]);
-    const [activeCourses, setActiveCourses] = useState<any[]>([]);
+    const [activeCourses, setActiveCourses] = useState<CourseSummary[]>([]);
+    const [dashboardLoading, setDashboardLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [showSwitcher, setShowSwitcher] = useState(false);
     const activeNodeRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -30,26 +39,67 @@ export default function Dashboard() {
 
         // Fetch course map and user's active courses metadata
         async function loadCourseData() {
-            if (activeCourseId) {
-                const [mapData, allCourses] = await Promise.all([
-                    ApiService.getCourseMap(activeCourseId),
-                    ApiService.getCourses()
-                ]);
+            if (userLoading || progressLoading || !user) {
+                return;
+            }
 
-                setLessons(mapData);
+            setDashboardLoading(true);
+            setLoadError(null);
+
+            try {
+                const allCourses = await ApiService.getCourses() as CourseSummary[];
+                const availableCourseIds = allCourses.map((course) => course.courseId).filter(Boolean);
+                const progressCourseIds = Object.keys(progress.course_progress || {});
+                const resolvedCourseId =
+                    activeCourseId ||
+                    progress.primary_track_id ||
+                    progressCourseIds.find((courseId) => availableCourseIds.includes(courseId)) ||
+                    availableCourseIds[0] ||
+                    "";
+
+                if (!resolvedCourseId) {
+                    setLessons([]);
+                    setActiveCourses([]);
+                    return;
+                }
+
+                if (resolvedCourseId !== activeCourseId) {
+                    setActiveCourseId(resolvedCourseId);
+                }
+
+                const mapData = await ApiService.getCourseMap(resolvedCourseId);
+                setLessons(Array.isArray(mapData) ? mapData : []);
 
                 // Filter to only enrolled courses
-                const enrolled = allCourses.filter((c: any) => progress.course_progress && progress.course_progress[c.courseId]);
+                const enrolled = allCourses.filter((course) => progress.course_progress && progress.course_progress[course.courseId]);
                 // If the current active course somehow isn't in progress, include it anyway for safety
-                if (!enrolled.find((c: any) => c.courseId === activeCourseId)) {
-                    const fallback = allCourses.find((c: any) => c.courseId === activeCourseId);
-                    if (fallback) enrolled.push(fallback);
+                if (!enrolled.find((course) => course.courseId === resolvedCourseId)) {
+                    const fallback = allCourses.find((course) => course.courseId === resolvedCourseId);
+                    if (fallback) enrolled.unshift(fallback);
                 }
+
                 setActiveCourses(enrolled);
+            } catch (error) {
+                console.error("Failed to load dashboard course data", error);
+                setLessons([]);
+                setActiveCourses([]);
+                setLoadError(error instanceof Error ? error.message : "Could not load your course.");
+            } finally {
+                setDashboardLoading(false);
             }
         }
+
         loadCourseData();
-    }, [user, userLoading, router, activeCourseId]);
+    }, [
+        user,
+        userLoading,
+        router,
+        progressLoading,
+        activeCourseId,
+        progress.primary_track_id,
+        progress.course_progress,
+        setActiveCourseId,
+    ]);
 
     // Scroll to active node on load
     useEffect(() => {
@@ -60,11 +110,12 @@ export default function Dashboard() {
         }
     }, [lessons]);
 
-    if (userLoading || progressLoading) return <div className="min-h-screen pt-20 text-center">Loading...</div>;
+    if (userLoading || progressLoading || dashboardLoading) {
+        return <div className="min-h-screen pt-20 text-center">Loading...</div>;
+    }
 
     // --- Layout Constants ---
     const ROW_HEIGHT = 140; // Vertical spacing
-    const AMPLITUDE = 0;   // No horizontal sway - Straight line
     const CENTER_X = 25;    // Shifted left (25%) to provide ample room for labels on the right
 
     // Helper to calculate position for a node index
@@ -78,9 +129,9 @@ export default function Dashboard() {
 
     // Generate SVG path string - Simplified straight line
     const generatePath = () => {
-        if (lessons.length === 0) return "";
+        if (displayLessons.length === 0) return "";
         const startPos = getNodePosition(0);
-        const endPos = getNodePosition(lessons.length - 1);
+        const endPos = getNodePosition(displayLessons.length - 1);
 
         const startY = startPos.y + 40;
         const endY = endPos.y + 40;
@@ -92,14 +143,57 @@ export default function Dashboard() {
         return lesson.status || "locked";
     };
 
-    const completedCount = lessons.filter(l => l.status === "completed").length;
-    const totalCount = lessons.length || 1;
+    const hasCompletedCourseIntro = Boolean(
+        activeCourseId && progress.course_intro_progress?.[activeCourseId]
+    );
+    const introTemporarilyUnavailable = Boolean(
+        activeCourseId && isCourseIntroTemporarilyUnavailable(activeCourseId)
+    );
+
+    const firstLessonId = lessons[0]?.lessonId || null;
+    const requireIntroForceLock = !hasCompletedCourseIntro && !introTemporarilyUnavailable;
+
+    const displayLessons = lessons.length > 0 ? [
+        ...(!introTemporarilyUnavailable ? [{
+            lessonId: "course_intro",
+            lessonNumber: 0,
+            lessonName: "Course Introduction",
+            shortTitle: "Intro",
+            topicGroup: "Getting Started",
+            estimatedDuration: 5,
+            status: hasCompletedCourseIntro ? "completed" : "active",
+            prerequisites: [],
+        } as Lesson] : []),
+        ...lessons.map(lesson => ({
+            ...lesson,
+            status: requireIntroForceLock ? "locked" : lesson.status
+        }))
+    ] : [];
+
+    const completedCount = displayLessons.filter(l => l.status === "completed").length;
+    const totalCount = displayLessons.length || 1;
     const progressPercent = Math.round((completedCount / totalCount) * 100);
 
-    const totalHeight = lessons.length * ROW_HEIGHT + 150;
+    const totalHeight = displayLessons.length * ROW_HEIGHT + 150;
 
     const currentCourse = activeCourses.find(c => c.courseId === activeCourseId);
     const courseName = currentCourse ? currentCourse.courseName : "Your Active Track";
+
+    const launchLesson = (lessonId: string) => {
+        if (!activeCourseId) {
+            router.push(`/lesson/${lessonId}`);
+            return;
+        }
+
+        if (lessonId === "course_intro") {
+            if (!introTemporarilyUnavailable) {
+                router.push(`/course/${activeCourseId}/intro?next=${firstLessonId}`);
+            }
+            return;
+        }
+
+        router.push(`/lesson/${lessonId}?course=${encodeURIComponent(activeCourseId)}`);
+    };
 
     return (
         <div className="flex flex-col min-h-screen relative bg-[#f0fdfa]">
@@ -122,10 +216,6 @@ export default function Dashboard() {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-teal-700"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                         </button>
-                        <p className="text-sm text-teal-600/70 font-medium mt-1">
-                            {user?.profile?.profession ? `Tailored for ${user.profile.profession}` : 'Your learning path'}
-                        </p>
-
                         {/* Dropdown Switcher */}
                         {showSwitcher && activeCourses.length > 1 && (
                             <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-teal-100 p-2 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
@@ -147,7 +237,7 @@ export default function Dashboard() {
                         )}
                         {showSwitcher && activeCourses.length <= 1 && (
                             <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-teal-100 p-4 z-50 animate-in fade-in slide-in-from-top-2">
-                                <p className="text-sm text-gray-600 font-medium mb-3">You don't have any other active tracks.</p>
+                                <p className="text-sm text-gray-600 font-medium mb-3">You do not have any other active tracks.</p>
                                 <button
                                     onClick={() => router.push('/portfolio')}
                                     className="w-full bg-teal-50 text-teal-700 text-xs font-bold py-2 rounded-xl transition-colors hover:bg-teal-100"
@@ -198,6 +288,39 @@ export default function Dashboard() {
             </div>
 
             <ResolutionHUD />
+
+
+
+            {!dashboardLoading && displayLessons.length === 0 && (
+                <div className="px-6 pt-6">
+                    <div className="mx-auto max-w-md rounded-[2rem] border border-teal-100 bg-white/90 p-6 shadow-[0_20px_60px_rgba(20,184,166,0.12)] backdrop-blur-xl">
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-teal-600/80">
+                            Course loading
+                        </p>
+                        <h2 className="mt-2 text-2xl font-black text-teal-950">
+                            We couldn&apos;t populate this dashboard yet
+                        </h2>
+                                <p className="mt-3 text-sm font-medium leading-relaxed text-teal-800/80">
+                            {loadError || "Try re-opening the course from your portfolio, or pick another track while we refresh your lesson map."}
+                        </p>
+                        <div className="mt-5 flex gap-3">
+                            <Button
+                                className="h-12 flex-1 text-sm font-black"
+                                onClick={() => router.push("/portfolio")}
+                            >
+                                Back to portfolio
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="h-12 flex-1 text-sm font-black"
+                                onClick={() => window.location.reload()}
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Scrollable Map Area */}
             <div className="flex-1 relative overflow-hidden" ref={containerRef} id="tour-path">
@@ -254,10 +377,10 @@ export default function Dashboard() {
                     </svg>
 
                     {/* Nodes */}
-                    {lessons.map((lesson, index) => {
+                    {displayLessons.map((lesson, index) => {
                         const state = getLessonState(lesson);
                         const pos = getNodePosition(index);
-                        const isLast = index === lessons.length - 1;
+                        const isLast = index === displayLessons.length - 1;
 
                         return (
                             <div
@@ -272,7 +395,7 @@ export default function Dashboard() {
                                 <CourseMapNode
                                     lesson={lesson}
                                     state={state}
-                                    onClick={() => router.push(`/lesson/${lesson.lessonId}`)}
+                                    onClick={() => launchLesson(lesson.lessonId)}
                                     isLast={isLast}
                                     labelPosition="right"
                                 />

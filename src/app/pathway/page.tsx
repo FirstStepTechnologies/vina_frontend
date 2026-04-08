@@ -6,41 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/UserContext";
 import { useProgress } from "@/contexts/ProgressContext";
 import { ApiService } from "@/lib/api/service";
-import { Lock, ArrowRight, BookOpen, Zap, FileText } from "lucide-react";
+import { Lock, ArrowRight, BookOpen, Zap, FileText, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PATHWAY_COURSES = [
-    {
-        id: "c_llm_foundations",
-        title: "Foundations of LLM",
-        description: "Master the basics, understand tokens, and learn to write effective prompts.",
-        status: "active",
-        icon: FileText,
-        color: "text-teal-600",
-        bg: "bg-teal-50",
-        border: "border-teal-200"
-    },
-    {
-        id: "c_rag_arch",
-        title: "RAG Architectures",
-        description: "Connect LLMs to your own data to build powerful, context-aware applications.",
-        status: "locked",
-        icon: BookOpen,
-        color: "text-gray-400",
-        bg: "bg-gray-50",
-        border: "border-gray-200"
-    },
-    {
-        id: "c_agentic_ai",
-        title: "Agentic AI Workflows",
-        description: "Deploy autonomous agents that can plan and execute multi-step tasks.",
-        status: "locked",
-        icon: Zap,
-        color: "text-gray-400",
-        bg: "bg-gray-50",
-        border: "border-gray-200"
-    }
-];
+const LOCAL_DEBUG = false;
 
 export default function PathwayScreen() {
     const router = useRouter();
@@ -49,7 +18,25 @@ export default function PathwayScreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
+    const [courses, setCourses] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const profession = user?.onboardingResponses?.role || user?.profile?.profession || "Learner";
+    const pathwayStepCount = courses.length || 4;
+
+    useState(() => {
+        async function loadCourses() {
+            try {
+                const fetchedCourses = await ApiService.getCourses();
+                setCourses(fetchedCourses);
+            } catch (e) {
+                console.error("Failed to load pathway courses", e);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        loadCourses();
+    });
 
     const finalizePathway = async (redirectTarget: string) => {
         setIsSubmitting(true);
@@ -84,7 +71,7 @@ export default function PathwayScreen() {
                     Custom-built for your role as a <span className="text-teal-300">{profession}</span>
                 </h1>
                 <p className="text-teal-100 font-medium text-sm px-4">
-                    We've designed a 3-step learning journey to help you achieve your goals faster.
+                    We've designed a {pathwayStepCount}-course learning journey to help you achieve your goals faster.
                 </p>
             </header>
 
@@ -95,10 +82,22 @@ export default function PathwayScreen() {
                     <div className="absolute left-8 top-10 bottom-10 w-0.5 bg-gradient-to-b from-teal-200 via-gray-300 to-gray-200 z-0"></div>
 
                     <div className="space-y-6 relative z-10">
-                        {PATHWAY_COURSES.map((course, index) => {
-                            const isActive = course.status === "active";
+                        {courses.length === 0 && !isLoading && (
+                            <div className="text-center py-10 opacity-50">No pathway available.</div>
+                        )}
+                        {courses.map((course, index) => {
+                            const isActive = index === 0;
+                            const IconCmp = index === 0
+                                ? FileText
+                                : index === 1
+                                    ? BookOpen
+                                    : index === 2
+                                        ? Zap
+                                        : Bot;
+                            const color = isActive ? "text-teal-600" : "text-gray-400";
+
                             return (
-                                <div key={course.id} className="relative flex items-stretch gap-4 group">
+                                <div key={course.courseId} className="relative flex items-stretch gap-4 group">
                                     {/* Timeline Node */}
                                     <div className="flex flex-col items-center pt-3">
                                         <div className={cn(
@@ -123,7 +122,7 @@ export default function PathwayScreen() {
                                             <div className="absolute -right-4 -top-4 w-16 h-16 bg-teal-50 rounded-full blur-xl"></div>
                                         )}
                                         <div className="flex items-center gap-2 mb-1.5 relative z-10">
-                                            <span className={cn("text-xs font-black uppercase tracking-widest", course.color)}>
+                                            <span className={cn("text-xs font-black uppercase tracking-widest", color)}>
                                                 Step {index + 1}
                                             </span>
                                             {isActive && (
@@ -133,10 +132,10 @@ export default function PathwayScreen() {
                                             )}
                                         </div>
                                         <h3 className={cn("font-black text-lg mb-1.5 leading-tight tracking-tight relative z-10", isActive ? "text-gray-900" : "text-gray-500")}>
-                                            {course.title}
+                                            {course.courseName}
                                         </h3>
-                                        <p className="text-sm text-gray-500 font-medium leading-relaxed relative z-10">
-                                            {course.description}
+                                        <p className="text-sm text-gray-500 font-medium leading-relaxed relative z-10 line-clamp-2">
+                                            {course.tagline}
                                         </p>
                                     </div>
                                 </div>
@@ -170,7 +169,7 @@ export default function PathwayScreen() {
 
                         <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Ready to begin?</h2>
                         <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed px-1">
-                            You're about to start <strong>Foundations of LLM</strong>. How would you like to proceed?
+                            You're about to start <strong>{courses[0]?.courseName || "your first course"}</strong>. How would you like to proceed?
                         </p>
 
                         <div className="space-y-3">

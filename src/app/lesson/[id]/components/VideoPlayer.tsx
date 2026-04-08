@@ -9,27 +9,19 @@ interface VideoPlayerProps {
     onEnded: (durationSeconds: number) => void;
     className?: string;
     poster?: string;
+    autoPlay?: boolean;
 }
 
-export function VideoPlayer({ src, onEnded, className, poster }: VideoPlayerProps) {
+export function VideoPlayer({ src, onEnded, className, poster, autoPlay = false }: VideoPlayerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const [speed, setSpeed] = useState(1);
     const controlsTimeoutRef = useRef<NodeJS.Timeout>(null);
-
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.load();
-            setProgress(0);
-            setIsPlaying(false);
-            // Optionally auto-play after adaptation
-            // videoRef.current.play();
-            // setIsPlaying(true);
-        }
-    }, [src]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -37,6 +29,8 @@ export function VideoPlayer({ src, onEnded, className, poster }: VideoPlayerProp
 
         const updateProgress = () => {
             if (video.duration) {
+                setCurrentTime(video.currentTime);
+                setDuration(video.duration);
                 setProgress((video.currentTime / video.duration) * 100);
             }
         };
@@ -46,12 +40,26 @@ export function VideoPlayer({ src, onEnded, className, poster }: VideoPlayerProp
             onEnded(video.duration || 0);
         };
 
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
+
+        const handleLoadedMetadata = () => {
+            setDuration(video.duration || 0);
+            setCurrentTime(video.currentTime || 0);
+        };
+
         video.addEventListener("timeupdate", updateProgress);
         video.addEventListener("ended", handleVideoEnded);
+        video.addEventListener("play", handlePlay);
+        video.addEventListener("pause", handlePause);
+        video.addEventListener("loadedmetadata", handleLoadedMetadata);
 
         return () => {
             video.removeEventListener("timeupdate", updateProgress);
             video.removeEventListener("ended", handleVideoEnded);
+            video.removeEventListener("play", handlePlay);
+            video.removeEventListener("pause", handlePause);
+            video.removeEventListener("loadedmetadata", handleLoadedMetadata);
         };
     }, [onEnded]);
 
@@ -120,6 +128,7 @@ export function VideoPlayer({ src, onEnded, className, poster }: VideoPlayerProp
                 className="w-full h-full object-cover"
                 onClick={togglePlay}
                 playsInline
+                autoPlay={autoPlay}
             />
 
             {/* Overlay Controls */}
@@ -150,7 +159,7 @@ export function VideoPlayer({ src, onEnded, className, poster }: VideoPlayerProp
                         </button>
 
                         <span className="text-sm font-medium">
-                            {videoRef.current ? formatTime(videoRef.current.currentTime) : "0:00"} / {videoRef.current ? formatTime(videoRef.current.duration) : "0:00"}
+                            {formatTime(currentTime)} / {formatTime(duration)}
                         </span>
                     </div>
 
