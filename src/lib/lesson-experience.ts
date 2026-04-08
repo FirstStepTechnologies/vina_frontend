@@ -186,6 +186,14 @@ export function buildLessonSteps(
                 }
             });
 
+        if (index === coreSegments.length - 1 && manifest.resources.length > 0) {
+            steps.push({
+                id: "resources",
+                kind: "resources",
+                resources: manifest.resources,
+            });
+        }
+
         manifest.micro_interactions
             .filter((interaction) => interaction.after_segment_number === segment.segment_number)
             .forEach((interaction) => {
@@ -197,12 +205,6 @@ export function buildLessonSteps(
             });
     });
 
-    steps.push({
-        id: "quiz",
-        kind: "quiz",
-        quiz: manifest.final_quiz,
-    });
-
     if (manifest.takeaway_card_url) {
         steps.push({
             id: "takeaway",
@@ -211,13 +213,11 @@ export function buildLessonSteps(
         });
     }
 
-    if (manifest.resources.length > 0) {
-        steps.push({
-            id: "resources",
-            kind: "resources",
-            resources: manifest.resources,
-        });
-    }
+    steps.push({
+        id: "quiz",
+        kind: "quiz",
+        quiz: manifest.final_quiz,
+    });
 
     steps.push({
         id: "completion",

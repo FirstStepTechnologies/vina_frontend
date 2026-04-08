@@ -1036,7 +1036,7 @@ export default function LessonPage() {
                                         className="h-14 w-full text-base font-black"
                                         onClick={() => goToNextStep(currentStep.id)}
                                     >
-                                        Continue
+                                        Continue to final quiz
                                     </Button>
                                 </div>
                             </Card>
@@ -1126,7 +1126,7 @@ export default function LessonPage() {
                                         className="h-14 w-full text-base font-black"
                                         onClick={() => goToNextStep(currentStep.id)}
                                     >
-                                        Finish lesson
+                                        Continue to reflection
                                     </Button>
                                 </div>
                             </Card>
