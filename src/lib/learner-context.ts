@@ -11,7 +11,8 @@ export function getLearnerContext(user: VinaUser | null): LessonExperienceReques
     const experienceLevel =
         profile?.experience_level ||
         onboarding.experience_level ||
-        "Beginner";
+        onboarding.experience ||
+        "Intermediate";
 
     if (!profession || !industry) {
         return null;
@@ -25,29 +26,11 @@ export function getLearnerContext(user: VinaUser | null): LessonExperienceReques
 }
 
 export function getLessonExperienceContexts(
-    user: VinaUser | null,
-    courseId: string
+    user: VinaUser | null
 ): LessonExperienceRequestContext[] {
     const primary = getLearnerContext(user);
     if (!primary) {
         return [];
     }
-
-    const contexts: LessonExperienceRequestContext[] = [primary];
-
-    const isPmCourse = courseId.startsWith("c_pm26-");
-    const needsPmFallback =
-        primary.profession === "Product Manager" &&
-        isPmCourse &&
-        (primary.industry !== "FinTech" || primary.experienceLevel !== "Intermediate");
-
-    if (needsPmFallback) {
-        contexts.push({
-            profession: "Product Manager",
-            industry: "FinTech",
-            experienceLevel: "Intermediate",
-        });
-    }
-
-    return contexts;
+    return [primary];
 }
