@@ -116,8 +116,8 @@ export default function LessonPage() {
     const requestedCourseId = searchParams.get("course") || "";
     const resolvedCourseId = activeCourseId || requestedCourseId || progress.primary_track_id || "";
     const lessonExperienceContexts = useMemo(
-        () => getLessonExperienceContexts(user, resolvedCourseId),
-        [resolvedCourseId, user]
+        () => getLessonExperienceContexts(user),
+        [user]
     );
     const lessonMeta = useMemo(
         () => courseMap.find((lesson) => lesson.lessonId === params.id) || null,
@@ -334,7 +334,7 @@ export default function LessonPage() {
 
         const currentManifest = manifest;
         const quizContexts = [experienceContext];
-        const fallbackContexts = getLessonExperienceContexts(user, currentManifest.course_id);
+        const fallbackContexts = getLessonExperienceContexts(user);
         for (const candidateContext of fallbackContexts) {
             if (
                 candidateContext.profession === experienceContext.profession &&
