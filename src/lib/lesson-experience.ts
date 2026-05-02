@@ -108,9 +108,7 @@ export function clearLessonExperienceSession(experienceId: string) {
 export function createDefaultLessonExperienceSession(
     manifest: LessonExperienceManifest
 ): LessonExperienceSessionState {
-    const initialStepId = manifest.pre_lesson_card
-        ? "pre_lesson"
-        : `segment:${getCoreSegments(manifest)[0]?.segment_id || manifest.segments[0]?.segment_id || "start"}`;
+    const initialStepId = `segment:${getCoreSegments(manifest)[0]?.segment_id || manifest.segments[0]?.segment_id || "start"}`;
 
     return {
         currentStepId: initialStepId,
@@ -144,14 +142,6 @@ export function buildLessonSteps(
     const steps: LessonExperienceStep[] = [];
     const coreSegments = getCoreSegments(manifest);
     const conditionalSegments = getConditionalSegments(manifest);
-
-    if (manifest.pre_lesson_card) {
-        steps.push({
-            id: "pre_lesson",
-            kind: "pre_lesson",
-            card: manifest.pre_lesson_card,
-        });
-    }
 
     coreSegments.forEach((segment, index) => {
         steps.push({

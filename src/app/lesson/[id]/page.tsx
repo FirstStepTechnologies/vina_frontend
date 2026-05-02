@@ -9,7 +9,6 @@ import {
     ArrowRight,
     BookOpen,
     CheckCircle2,
-    Lightbulb,
     Sparkles,
 } from "lucide-react";
 import { ApiService } from "@/lib/api/service";
@@ -231,7 +230,14 @@ export default function LessonPage() {
                     readLessonExperienceSession(data.experience_id) ||
                     createDefaultLessonExperienceSession(data);
 
-                setSessionState(restoredSession);
+                setSessionState(
+                    restoredSession.currentStepId === "pre_lesson"
+                        ? {
+                            ...restoredSession,
+                            currentStepId: createDefaultLessonExperienceSession(data).currentStepId,
+                        }
+                        : restoredSession
+                );
 
                 const now = Date.now();
                 sessionStorage.setItem(`lesson_started_at_${params.id}`, now.toString());
@@ -735,64 +741,6 @@ export default function LessonPage() {
                         </div>
                     )}
                 </header>
-
-                {currentStep?.kind === "pre_lesson" && (
-                    <div className="px-6 pb-10 pt-8">
-                        <div className="mx-auto max-w-2xl">
-                            <Card className="overflow-hidden border border-teal-100 bg-white/90 p-0 shadow-[0_30px_80px_rgba(20,184,166,0.12)]">
-                                <div className="bg-[linear-gradient(135deg,#0f766e_0%,#164e63_100%)] px-7 py-8 text-white">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-teal-100/80">
-                                        Ready to dive in
-                                    </p>
-                                    <h2 className="mt-3 text-3xl font-black leading-tight">
-                                        {manifest.title}
-                                    </h2>
-                                    <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-white/80">
-                                        {currentStep.card.audience_label}
-                                    </p>
-                                </div>
-
-                                <div className="px-7 py-7">
-                                    <div className="rounded-[1.75rem] bg-teal-50 p-5">
-                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-600">
-                                            Your payoff
-                                        </p>
-                                        <p className="mt-2 text-xl font-black leading-tight text-teal-950">
-                                            {currentStep.card.lesson_promise}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-5 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-                                        <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                            <Lightbulb size={16} />
-                                            Question to hold in your head
-                                        </p>
-                                        <p className="mt-2 text-lg font-bold leading-relaxed text-slate-900">
-                                            {currentStep.card.provocative_question}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-6 flex items-center justify-between rounded-[1.5rem] border border-teal-100 bg-white px-5 py-4">
-                                        <div>
-                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-teal-600/80">
-                                                Estimated time
-                                            </p>
-                                            <p className="mt-1 text-base font-bold text-teal-950">
-                                                {currentStep.card.estimated_duration}
-                                            </p>
-                                        </div>
-                                        <Button
-                                            className="h-14 px-7 text-base font-black"
-                                            onClick={() => goToNextStep(currentStep.id)}
-                                        >
-                                            Start lesson
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-                    </div>
-                )}
 
                 {currentStep?.kind === "segment" && (
                     <div className="absolute inset-0 pt-24">

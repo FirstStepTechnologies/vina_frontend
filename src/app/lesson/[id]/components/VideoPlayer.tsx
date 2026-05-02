@@ -63,6 +63,19 @@ export function VideoPlayer({ src, onEnded, className, poster, autoPlay = false 
         };
     }, [onEnded]);
 
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !autoPlay) return;
+
+        video.play().catch(() => {
+            video.muted = true;
+            setIsMuted(true);
+            video.play().catch(() => {
+                setIsPlaying(false);
+            });
+        });
+    }, [autoPlay, src]);
+
     const togglePlay = () => {
         if (!videoRef.current) return;
         if (isPlaying) {
