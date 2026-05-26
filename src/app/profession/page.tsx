@@ -58,9 +58,6 @@ const SECTION_THEMES: Record<string, { color: string, bg: string, ring: string, 
     }
 };
 
-const DEFAULT_INDUSTRY = "Cross-domain";
-const DEFAULT_EXPERIENCE_LEVEL = "Intermediate";
-
 export default function PersonalisationFlow() {
     const router = useRouter();
     // Multi-step State with Default Values
@@ -94,7 +91,17 @@ export default function PersonalisationFlow() {
         try {
             // Mapping for backend schema
             const goalMins = 10; // Defaulting for simple 2-screen onboarding
-            const industry = DEFAULT_INDUSTRY;
+
+            const industryMap: Record<string, string> = {
+                "Clinical Researcher": "Pharma/Biotech",
+                "HR Manager": "Tech Company",
+                "Marketing Manager": "E-Commerce",
+                "Project Manager": "Software/Tech",
+                "Product Manager": "FinTech",
+                "Investment Analyst": "Venture Capital"
+            };
+
+            const industry = industryMap[selections.role] || "Technology";
 
             if (shouldReset) {
                 resetProgress();
@@ -108,14 +115,13 @@ export default function PersonalisationFlow() {
             const profileUpdates = {
                 profession: selections.role,
                 industry: industry,
-                experience_level: DEFAULT_EXPERIENCE_LEVEL,
+                experience_level: "Beginner",
                 daily_goal_minutes: goalMins,
                 resolution: resolution,
                 onboarding_responses: {
                     ...selections,
                     industry: industry,
-                    experience: DEFAULT_EXPERIENCE_LEVEL,
-                    experience_level: DEFAULT_EXPERIENCE_LEVEL,
+                    experience: "Beginner",
                     pace: selections.pace || "steady",
                     reminders: selections.reminders || "yes",
                     timeline: selections.timeline || "3m"

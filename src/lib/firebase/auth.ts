@@ -5,7 +5,6 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    updateProfile,
     UserCredential,
 } from "firebase/auth";
 import { firebaseApp } from "./config";
@@ -28,12 +27,9 @@ export async function signInWithGoogle(): Promise<string> {
  * Register a new user with email + password via Firebase.
  * Returns the Firebase ID token to exchange with the Vina backend.
  */
-export async function registerWithEmail(email: string, password: string, fullName?: string): Promise<string> {
+export async function registerWithEmail(email: string, password: string): Promise<string> {
     const result: UserCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if (fullName?.trim()) {
-        await updateProfile(result.user, { displayName: fullName.trim() });
-    }
-    return result.user.getIdToken(true);
+    return result.user.getIdToken();
 }
 
 /**

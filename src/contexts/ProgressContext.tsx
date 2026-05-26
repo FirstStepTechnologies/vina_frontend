@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { VinaProgress } from "@/lib/api/types";
 import { useUser } from "./UserContext";
 import { ApiService } from "@/lib/api/service";
@@ -8,7 +8,6 @@ import { getSessionId } from "@/lib/session";
 
 const DEFAULT_PROGRESS: VinaProgress = {
     course_progress: {},
-    course_intro_progress: {},
     secondary_track_ids: [],
     diamonds: 0,
     streak: 0,
@@ -27,7 +26,6 @@ interface ProgressContextType {
     setActiveCourseId: (id: string) => void;
     isLoading: boolean;
     updateProgress: (updates: Partial<VinaProgress>) => void;
-    completeCourseIntro: (courseId: string) => Promise<void>;
     completeLesson: (lessonId: string, score?: number, total?: number) => Promise<void>;
     addMinutes: (minutes: number) => Promise<void>;
     addDiamonds: (amount: number) => void;
@@ -38,19 +36,22 @@ const ProgressContext = createContext<ProgressContextType | undefined>(undefined
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
     const [progress, setProgress] = useState<VinaProgress>(DEFAULT_PROGRESS);
-    const [activeCourseId, setActiveCourseIdState] = useState<string>(() => {
-        if (typeof window === "undefined") {
-            return "";
-        }
-        return localStorage.getItem("vina_active_course_id") || "";
-    });
+    const [activeCourseId, setActiveCourseIdState] = useState<string>("c_llm_foundations"); // Default fallback
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useUser();
 
-    const setActiveCourseId = useCallback((id: string) => {
+    // Persist activeCourseId explicitly to local storage
+    useEffect(() => {
+        const storedCourseId = localStorage.getItem("vina_active_course_id");
+        if (storedCourseId) {
+            setActiveCourseIdState(storedCourseId);
+        }
+    }, []);
+
+    const setActiveCourseId = (id: string) => {
         setActiveCourseIdState(id);
         localStorage.setItem("vina_active_course_id", id);
-    }, []);
+    };
 
     useEffect(() => {
         const fetchProgress = async () => {
@@ -71,11 +72,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                     const liveProgress = await ApiService.getProgress();
                     if (liveProgress && liveProgress.user_id) {
                         setProgress(liveProgress);
-                        const storedCourseId = localStorage.getItem("vina_active_course_id");
-                        if (storedCourseId) {
-                            setActiveCourseIdState(storedCourseId);
-                            localStorage.setItem("vina_active_course_id", storedCourseId);
-                        } else if (liveProgress.primary_track_id) {
+                        if (liveProgress.primary_track_id) {
                             setActiveCourseIdState(liveProgress.primary_track_id);
                             localStorage.setItem("vina_active_course_id", liveProgress.primary_track_id);
                         }
@@ -99,32 +96,6 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     const updateProgress = (updates: Partial<VinaProgress>) => {
         setProgress(prev => ({ ...prev, ...updates }));
-    };
-
-    const completeCourseIntro = async (courseId: string) => {
-        try {
-            const updatedProgress = await ApiService.completeCourseIntro(courseId);
-            if (updatedProgress?.user_id) {
-                setProgress(updatedProgress);
-            } else {
-                setProgress((prev) => ({
-                    ...prev,
-                    course_intro_progress: {
-                        ...(prev.course_intro_progress || {}),
-                        [courseId]: true,
-                    },
-                }));
-            }
-        } catch (e) {
-            console.error("Failed to persist course intro completion on server", e);
-            setProgress((prev) => ({
-                ...prev,
-                course_intro_progress: {
-                    ...(prev.course_intro_progress || {}),
-                    [courseId]: true,
-                },
-            }));
-        }
     };
 
     const completeLesson = async (lessonId: string, score: number = 0, total: number = 0) => {
@@ -218,7 +189,6 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                 setActiveCourseId,
                 isLoading,
                 updateProgress,
-                completeCourseIntro,
                 completeLesson,
                 addMinutes,
                 addDiamonds,

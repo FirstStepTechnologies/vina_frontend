@@ -12,7 +12,6 @@ import {
     registerWithEmail,
     loginWithEmail,
 } from "@/lib/firebase/auth";
-import { Token } from "@/lib/api/types";
 
 type Mode = "signin" | "signup";
 
@@ -70,7 +69,9 @@ export default function LoginPage() {
         else setError(msg);
     };
 
-    const handleBackendTokenAndRedirect = async (token: Token, explicitRedirectToIntro: boolean) => {
+    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean) => {
+        const token = await ApiService.firebaseLogin(idToken);
+
         // Temporarily store just the access token so getProfile can use it
         localStorage.setItem("vina_token", token.access_token);
 
@@ -96,11 +97,6 @@ export default function LoginPage() {
         }
     };
 
-    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean, submittedFullName?: string) => {
-        const token = await ApiService.firebaseLogin(idToken, submittedFullName);
-        await handleBackendTokenAndRedirect(token, explicitRedirectToIntro);
-    };
-
     const handleGoogle = async () => {
         setError(null);
         setIsLoading("google");
@@ -119,14 +115,15 @@ export default function LoginPage() {
         setError(null);
         setIsLoading("email");
         try {
+            let idToken: string;
+            let isNewUser = false;
             if (mode === "signup") {
-                const submittedFullName = fullName.trim();
-                const idToken = await registerWithEmail(email, password, submittedFullName);
-                await handleTokenAndRedirect(idToken, true, submittedFullName);
+                idToken = await registerWithEmail(email, password);
+                isNewUser = true;
             } else {
-                const idToken = await loginWithEmail(email, password);
-                await handleTokenAndRedirect(idToken, false);
+                idToken = await loginWithEmail(email, password);
             }
+            await handleTokenAndRedirect(idToken, isNewUser);
         } catch (err) {
             handleError(err);
         } finally {
