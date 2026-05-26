@@ -69,8 +69,8 @@ export default function LoginPage() {
         else setError(msg);
     };
 
-    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean) => {
-        const token = await ApiService.firebaseLogin(idToken);
+    const handleTokenAndRedirect = async (idToken: string, explicitRedirectToIntro: boolean, submittedFullName?: string) => {
+        const token = await ApiService.firebaseLogin(idToken, submittedFullName);
 
         // Temporarily store just the access token so getProfile can use it
         localStorage.setItem("vina_token", token.access_token);
@@ -118,12 +118,14 @@ export default function LoginPage() {
             let idToken: string;
             let isNewUser = false;
             if (mode === "signup") {
-                idToken = await registerWithEmail(email, password);
+                const submittedFullName = fullName.trim();
+                idToken = await registerWithEmail(email, password, submittedFullName);
                 isNewUser = true;
+                await handleTokenAndRedirect(idToken, isNewUser, submittedFullName);
             } else {
                 idToken = await loginWithEmail(email, password);
+                await handleTokenAndRedirect(idToken, isNewUser);
             }
-            await handleTokenAndRedirect(idToken, isNewUser);
         } catch (err) {
             handleError(err);
         } finally {
