@@ -26,6 +26,7 @@ export default function LessonPage() {
     const [isAdapting, setIsAdapting] = useState(false);
     const [videoSrc, setVideoSrc] = useState("/assets/lesson1-normal.mp4");
     const lessonStartedAt = useRef<number | null>(null); // ms timestamp when lesson mounted
+    const adaptationRequestId = useRef(0);
 
     useEffect(() => {
         async function load() {
@@ -92,6 +93,7 @@ export default function LessonPage() {
         }
 
         setIsAdapting(true);
+        const requestId = ++adaptationRequestId.current;
 
         let newDifficulty = 3;
         // Map adaptation type to difficulty
@@ -117,6 +119,8 @@ export default function LessonPage() {
 
             // Artificial delay for "Personalizing" experience
             setTimeout(() => {
+                if (requestId !== adaptationRequestId.current) return;
+
                 if (data && data.videoUrl) {
                     setLesson(data);
                     setVideoSrc(data.videoUrl);
@@ -134,6 +138,7 @@ export default function LessonPage() {
             }, 2000);
 
         } catch (error) {
+            if (requestId !== adaptationRequestId.current) return;
             console.error("Failed to adapt lesson:", error);
             setIsAdapting(false);
         }
@@ -185,6 +190,7 @@ export default function LessonPage() {
                     </div>
                 ) : (
                     <VideoPlayer
+                        key={videoSrc}
                         src={videoSrc}
                         onEnded={handleVideoEnd}
                         className="w-full h-full"
