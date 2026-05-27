@@ -1,6 +1,12 @@
-import { Lesson, QuizQuestion, VinaUser, Token } from "./types";
+import { CourseSummary, Lesson, QuizQuestion, VinaUser, Token } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://vina-backend-6snh.onrender.com/api/v1";
+const DEFAULT_COURSE_ID = "c_llm_foundations";
+const DEFAULT_COURSE_NAME = "Foundations of LLM";
+type LegacyLesson = Partial<Lesson> & {
+    title?: string;
+    duration?: number;
+};
 
 export class ApiService {
     private static getAuthHeader(): Record<string, string> {
@@ -15,6 +21,31 @@ export class ApiService {
             throw new Error(error.detail || response.statusText);
         }
         return response.json();
+    }
+
+    private static normalizeLessons(lessons: LegacyLesson[]): Lesson[] {
+        return lessons.map((lesson, index) => ({
+            ...lesson,
+            lessonId: lesson.lessonId || `lesson_${index + 1}`,
+            lessonNumber: lesson.lessonNumber || index + 1,
+            lessonName: lesson.lessonName || lesson.title || lesson.shortTitle || `Lesson ${index + 1}`,
+            shortTitle: lesson.shortTitle || lesson.title || lesson.lessonName || `Lesson ${index + 1}`,
+            topicGroup: lesson.topicGroup || "Foundations",
+            estimatedDuration: lesson.estimatedDuration || lesson.duration || 5,
+            prerequisites: lesson.prerequisites || [],
+        }));
+    }
+
+    private static buildDefaultCourse(lessons: Lesson[] = []): CourseSummary {
+        return {
+            courseId: DEFAULT_COURSE_ID,
+            courseName: DEFAULT_COURSE_NAME,
+            seriesName: "Vina Core",
+            tagline: "Master the basics, understand tokens, and learn to write effective prompts.",
+            preparesFor: ["AI fluency", "Prompt engineering", "LLM fundamentals"],
+            totalLessons: lessons.length,
+            estimatedDurationMinutes: lessons.reduce((total, lesson) => total + (lesson.estimatedDuration || 5), 0),
+        };
     }
 
     static async register(email: string, fullName: string): Promise<Token> {
@@ -94,18 +125,20 @@ export class ApiService {
         return this.handleResponse<VinaUser>(response);
     }
 
-    static async getCourses(): Promise<any[]> {
-        const response = await fetch(`${API_BASE_URL}/courses`, {
+    static async getCourses(): Promise<CourseSummary[]> {
+        const response = await fetch(`${API_BASE_URL}/course/map`, {
             headers: this.getAuthHeader(),
         });
-        return this.handleResponse<any[]>(response);
+        const lessons = this.normalizeLessons(await this.handleResponse<LegacyLesson[]>(response));
+        return [this.buildDefaultCourse(lessons)];
     }
 
     static async getCourseMap(courseId: string): Promise<Lesson[]> {
-        const response = await fetch(`${API_BASE_URL}/courses/${courseId}/map`, {
+        void courseId;
+        const response = await fetch(`${API_BASE_URL}/course/map`, {
             headers: this.getAuthHeader(),
         });
-        return this.handleResponse<Lesson[]>(response);
+        return this.normalizeLessons(await this.handleResponse<LegacyLesson[]>(response));
     }
 
 

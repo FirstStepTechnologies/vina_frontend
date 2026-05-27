@@ -29,6 +29,16 @@ export interface CourseProgress {
     current_difficulty: number;
 }
 
+export interface CourseSummary {
+    courseId: string;
+    courseName: string;
+    seriesName?: string;
+    tagline: string;
+    preparesFor: string[];
+    totalLessons: number;
+    estimatedDurationMinutes: number;
+}
+
 export interface VinaProgress {
     course_progress: Record<string, CourseProgress>;
     primary_track_id?: string;
