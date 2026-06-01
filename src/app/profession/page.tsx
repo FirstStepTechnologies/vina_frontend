@@ -22,7 +22,6 @@ const STEPS = [
             { label: "Marketing Manager", value: "Marketing Manager", sub: "" },
             { label: "Product Manager", value: "Product Manager", sub: "" },
             { label: "Project Manager", value: "Project Manager", sub: "" },
-            { label: "Clinical Researcher", value: "Clinical Researcher", sub: "" },
         ]
     },
     {
