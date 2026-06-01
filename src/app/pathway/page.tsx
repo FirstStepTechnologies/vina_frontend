@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 const PATHWAY_COURSES = [
     {
         id: "c_llm_foundations",
-        title: "Foundations of LLM",
+        title: "Workplace AI Foundations",
         description: "Master the basics, understand tokens, and learn to write effective prompts.",
         status: "active",
         icon: FileText,
@@ -170,7 +170,7 @@ export default function PathwayScreen() {
 
                         <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Ready to begin?</h2>
                         <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed px-1">
-                            You're about to start <strong>Foundations of LLM</strong>. How would you like to proceed?
+                            You're about to start <strong>Workplace AI Foundations</strong>. How would you like to proceed?
                         </p>
 
                         <div className="space-y-3">
