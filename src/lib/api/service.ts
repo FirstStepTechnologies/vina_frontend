@@ -2,7 +2,7 @@ import { CourseSummary, Lesson, QuizQuestion, VinaUser, Token } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://vina-backend-6snh.onrender.com/api/v1";
 const DEFAULT_COURSE_ID = "c_llm_foundations";
-const DEFAULT_COURSE_NAME = "Foundations of LLM";
+const DEFAULT_COURSE_NAME = "Workplace AI Foundations";
 type LegacyLesson = Partial<Lesson> & {
     title?: string;
     duration?: number;
