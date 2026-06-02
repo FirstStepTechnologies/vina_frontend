@@ -70,10 +70,14 @@ export default function LoginPage() {
         // Fetch the full rich user profile from backend (includes .profile struct)
         const fullProfile = await ApiService.getProfile();
         const progress = await ApiService.getProgress().catch(() => null);
+        const courseMap = await ApiService.getCourseMap("c_llm_foundations").catch(() => null);
         const hydratedProfile = {
             ...fullProfile,
             progress: progress || fullProfile.progress,
-            pre_assessment_completed: fullProfile.pre_assessment_completed || progress?.pre_assessment_completed,
+            pre_assessment_completed:
+                fullProfile.pre_assessment_completed ||
+                progress?.pre_assessment_completed ||
+                courseMap?.some(lesson => lesson.status === "completed"),
         };
 
         // Login with the properly structured user
@@ -86,7 +90,7 @@ export default function LoginPage() {
         if (explicitRedirectToIntro) {
             router.replace("/intro");
         } else {
-            router.replace(getPostLoginRoute(hydratedProfile, progress));
+            router.replace(getPostLoginRoute(hydratedProfile, progress, courseMap));
         }
     };
 

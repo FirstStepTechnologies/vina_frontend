@@ -35,10 +35,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     // Verify the session is still valid.
                     const freshUser = await ApiService.getProfile();
                     const liveProgress = await ApiService.getProgress().catch(() => null);
+                    const courseMap = await ApiService.getCourseMap("c_llm_foundations").catch(() => null);
                     const hydratedUser = {
                         ...freshUser,
                         progress: liveProgress || freshUser.progress,
-                        pre_assessment_completed: freshUser.pre_assessment_completed || liveProgress?.pre_assessment_completed,
+                        pre_assessment_completed:
+                            freshUser.pre_assessment_completed ||
+                            liveProgress?.pre_assessment_completed ||
+                            courseMap?.some(lesson => lesson.status === "completed"),
                     };
                     setUser(hydratedUser);
                     localStorage.setItem("vina_user", JSON.stringify(hydratedUser));
