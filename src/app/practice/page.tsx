@@ -7,7 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import { ApiService } from "@/lib/api/service";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { QuizQuestion as IQuizQuestion } from "@/lib/api/types";
+import { Lesson, QuizQuestion as IQuizQuestion } from "@/lib/api/types";
 import { QuizQuestion } from "@/components/ui/quiz-question";
 import { CelebrationOverlay } from "@/app/lesson/[id]/components/CelebrationOverlay";
 
@@ -20,6 +20,8 @@ export default function PracticePage() {
     const [score, setScore] = useState(0);
     const [isPracticing, setIsPracticing] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [isLoadingCourseMap, setIsLoadingCourseMap] = useState(true);
 
     // Celebration State
     const [showCelebration, setShowCelebration] = useState(false);
@@ -33,14 +35,38 @@ export default function PracticePage() {
         dailyGoalMinutes: 0
     });
 
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadCourseMap() {
+            setIsLoadingCourseMap(true);
+            try {
+                const mapData = await ApiService.getCourseMap(activeCourseId);
+                if (isMounted) setLessons(mapData);
+            } catch (error) {
+                console.error("Failed to load practice course map", error);
+            } finally {
+                if (isMounted) setIsLoadingCourseMap(false);
+            }
+        }
+
+        loadCourseMap();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [activeCourseId]);
+
     const courseProgressById = progress.course_progress || {};
     const courseProgress = courseProgressById[activeCourseId] || { completed_lessons: [] };
-    const completedLessons = Array.isArray(courseProgress.completed_lessons) ? courseProgress.completed_lessons : [];
+    const completedLessonIds = Array.isArray(courseProgress.completed_lessons) ? courseProgress.completed_lessons : [];
+    const completedLessonsFromMap = lessons.filter(lesson => lesson.status === "completed");
+    const completedLessonCount = completedLessonsFromMap.length > 0 ? completedLessonsFromMap.length : completedLessonIds.length;
     const minutesToday = progress.minutes_today || 0;
     const minutesThisWeek = progress.minutes_this_week || 0;
     const minutesTotal = progress.minutes_total || 0;
     const streak = progress.streak || 0;
-    const hasCompletedLessons = completedLessons.length > 0;
+    const hasCompletedLessons = completedLessonCount > 0;
     // Note: lastPracticeDate field doesn't exist in VinaProgress type
     // For now, we'll always allow practice (can be enhanced later)
     const hasPracticedToday = false; // Disabled until backend supports this field
@@ -110,6 +136,10 @@ export default function PracticePage() {
         setShowCelebration(false);
         setIsCompleted(true);
     };
+
+    if (isLoadingCourseMap && completedLessonIds.length === 0) {
+        return <div className="min-h-screen pt-20 text-center">Loading Practice...</div>;
+    }
 
     if (!hasCompletedLessons) {
         return (
@@ -224,7 +254,7 @@ export default function PracticePage() {
                     </Card>
 
                     <p className="text-xs font-black text-center text-teal-900/30 uppercase tracking-[0.2em] mt-auto pb-8">
-                        L01-L{completedLessons.length} REVIEW
+                        L01-L{completedLessonCount} REVIEW
                     </p>
                 </div>
             )}
