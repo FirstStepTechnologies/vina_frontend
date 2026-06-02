@@ -72,10 +72,33 @@ export function UserProvider({ children }: { children: ReactNode }) {
         router.replace("/");
     };
 
+    const mergeUser = (base: VinaUser | null, updates: any): VinaUser | null => {
+        if (!base) return updates;
+
+        return {
+            ...base,
+            ...updates,
+            profile: {
+                ...base.profile,
+                ...updates?.profile,
+            },
+            onboardingResponses: updates?.onboardingResponses || base.onboardingResponses,
+        };
+    };
+
     const updateUser = async (updates: any) => {
+        const optimisticUser = mergeUser(user, updates);
+        if (optimisticUser) {
+            setUser(optimisticUser);
+            localStorage.setItem("vina_user", JSON.stringify(optimisticUser));
+        }
+
         const updatedUser = await ApiService.updateProfile(updates);
-        setUser(updatedUser);
-        localStorage.setItem("vina_user", JSON.stringify(updatedUser));
+        const mergedUser = mergeUser(optimisticUser, updatedUser);
+        if (mergedUser) {
+            setUser(mergedUser);
+            localStorage.setItem("vina_user", JSON.stringify(mergedUser));
+        }
     };
 
     return (

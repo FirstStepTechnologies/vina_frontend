@@ -2,17 +2,14 @@
 
 import { useState } from "react";
 import { useUser } from "@/contexts/UserContext";
-import { useProgress } from "@/contexts/ProgressContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, User, LogOut, Save, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, updateUser, logout } = useUser();
-    const { progress } = useProgress();
 
     const [resolution, setResolution] = useState(user?.profile?.resolution || "");
     const [dailyGoal, setDailyGoal] = useState(user?.profile?.daily_goal_minutes || 10);
@@ -21,20 +18,21 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         setIsSaving(true);
-        // Note: updateUser should update the profile object
-        // This may need backend support to properly update nested profile fields
-        updateUser({
-            profile: {
-                ...user?.profile,
-                resolution,
-                daily_goal_minutes: dailyGoal
-            }
-        });
-        setTimeout(() => {
-            setIsSaving(false);
+        try {
+            await updateUser({
+                profile: {
+                    ...user?.profile,
+                    resolution,
+                    daily_goal_minutes: dailyGoal
+                }
+            });
             setShowSavedMsg(true);
             setTimeout(() => setShowSavedMsg(false), 3000);
-        }, 800);
+        } catch (error) {
+            console.error("Failed to save profile", error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const onboardingSummary = user?.onboardingResponses ? [
@@ -53,8 +51,6 @@ export default function ProfilePage() {
         { label: "Learning Pace", value: "Steady Growth" },
         { label: "Commitment", value: `${user?.profile?.daily_goal_minutes || 10} Minutes` },
     ];
-
-    const hasNoResponses = !user?.onboardingResponses;
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f0fdfa] pb-24">
@@ -131,30 +127,16 @@ export default function ProfilePage() {
                             <User size={20} className="text-teal-600" />
                             <h2 className="text-lg font-black text-teal-900 uppercase tracking-widest">My Personalisation</h2>
                         </div>
-                        {!hasNoResponses && (
-                            <button
-                                onClick={() => router.push('/profession')}
-                                className="flex items-center gap-1.5 px-3 py-1 bg-white border border-teal-100 rounded-lg text-[10px] font-black text-teal-600 uppercase tracking-widest hover:bg-teal-50 transition-colors shadow-sm"
-                            >
-                                <span className="text-xs">✏️</span>
-                                Edit
-                            </button>
-                        )}
+                        <button
+                            onClick={() => router.push('/profession')}
+                            className="flex items-center gap-1.5 px-3 py-1 bg-white border border-teal-100 rounded-lg text-[10px] font-black text-teal-600 uppercase tracking-widest hover:bg-teal-50 transition-colors shadow-sm"
+                        >
+                            <span className="text-xs">✏️</span>
+                            Edit
+                        </button>
                     </div>
                     <Card className="p-6 bg-white border-teal-100 shadow-sm relative overflow-hidden">
-                        {hasNoResponses && (
-                            <div className="absolute inset-0 bg-teal-50/10 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-6 text-center">
-                                <p className="text-xs font-bold text-teal-800/60 uppercase tracking-widest mb-3">Profile Incomplete</p>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => router.push('/profession')}
-                                    className="h-9 px-4 border-teal-200 text-teal-600 bg-white hover:bg-teal-50 rounded-lg text-[10px] font-black uppercase tracking-widest"
-                                >
-                                    Tailor My Experience
-                                </Button>
-                            </div>
-                        )}
-                        <div className={cn("grid grid-cols-1 gap-4", hasNoResponses && "opacity-20 blur-[1px]")}>
+                        <div className="grid grid-cols-1 gap-4">
                             {onboardingSummary.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center py-2 border-b border-teal-50 last:border-0">
                                     <span className="text-[10px] font-black text-teal-600/60 uppercase tracking-widest">{item.label}</span>
