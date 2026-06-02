@@ -16,7 +16,7 @@ export default function QuizResultsPage() {
     const params = useParams<{ id: string }>();
     const searchParams = useSearchParams();
     const { user } = useUser();
-    const { progress, completeLesson, addDiamonds, addMinutes } = useProgress();
+    const { progress, completeLesson, addDiamonds, addMinutes, updateProgress } = useProgress();
 
     const score = parseInt(searchParams.get("score") || "0");
     const total = parseInt(searchParams.get("total") || "3");
@@ -64,6 +64,7 @@ export default function QuizResultsPage() {
     }, []);
 
     const handleContinueToDashboard = () => {
+        updateProgress({ tourCompleted: true });
         router.replace("/dashboard");
     };
 

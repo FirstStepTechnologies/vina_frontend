@@ -102,6 +102,7 @@ export default function CheckpointQuizPage() {
     };
 
     const handleContinueToDashboard = () => {
+        updateProgress({ tourCompleted: true });
         router.push("/dashboard");
     };
 

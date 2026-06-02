@@ -24,24 +24,40 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
     typeof value === "object" && value !== null && !Array.isArray(value)
 );
 
-const normalizeProgress = (raw: unknown): VinaProgress => {
+const normalizeProgress = (raw: unknown, fallback: Partial<VinaProgress> = DEFAULT_PROGRESS): VinaProgress => {
     const source = isRecord(raw) ? raw as Partial<VinaProgress> : {};
+    const fallbackSource = isRecord(fallback) ? fallback : DEFAULT_PROGRESS;
 
     return {
         ...DEFAULT_PROGRESS,
+        ...fallbackSource,
         ...source,
-        course_progress: isRecord(source.course_progress) ? source.course_progress as VinaProgress["course_progress"] : {},
-        secondary_track_ids: Array.isArray(source.secondary_track_ids) ? source.secondary_track_ids : [],
-        daily_goal_history: isRecord(source.daily_goal_history) ? source.daily_goal_history as Record<string, boolean> : source.daily_goal_history,
-        diamonds: typeof source.diamonds === "number" ? source.diamonds : DEFAULT_PROGRESS.diamonds,
-        streak: typeof source.streak === "number" ? source.streak : DEFAULT_PROGRESS.streak,
-        minutes_today: typeof source.minutes_today === "number" ? source.minutes_today : DEFAULT_PROGRESS.minutes_today,
-        minutes_this_week: typeof source.minutes_this_week === "number" ? source.minutes_this_week : DEFAULT_PROGRESS.minutes_this_week,
-        minutes_total: typeof source.minutes_total === "number" ? source.minutes_total : DEFAULT_PROGRESS.minutes_total,
-        total_learning_time_seconds: typeof source.total_learning_time_seconds === "number" ? source.total_learning_time_seconds : DEFAULT_PROGRESS.total_learning_time_seconds,
-        pre_assessment_completed: typeof source.pre_assessment_completed === "boolean" ? source.pre_assessment_completed : DEFAULT_PROGRESS.pre_assessment_completed,
-        currentTourStep: typeof source.currentTourStep === "number" ? source.currentTourStep : DEFAULT_PROGRESS.currentTourStep,
-        tourCompleted: typeof source.tourCompleted === "boolean" ? source.tourCompleted : DEFAULT_PROGRESS.tourCompleted,
+        course_progress: isRecord(source.course_progress)
+            ? source.course_progress as VinaProgress["course_progress"]
+            : (isRecord(fallbackSource.course_progress) ? fallbackSource.course_progress as VinaProgress["course_progress"] : {}),
+        secondary_track_ids: Array.isArray(source.secondary_track_ids)
+            ? source.secondary_track_ids
+            : (Array.isArray(fallbackSource.secondary_track_ids) ? fallbackSource.secondary_track_ids : []),
+        daily_goal_history: isRecord(source.daily_goal_history)
+            ? source.daily_goal_history as Record<string, boolean>
+            : fallbackSource.daily_goal_history,
+        diamonds: typeof source.diamonds === "number" ? source.diamonds : (fallbackSource.diamonds ?? DEFAULT_PROGRESS.diamonds),
+        streak: typeof source.streak === "number" ? source.streak : (fallbackSource.streak ?? DEFAULT_PROGRESS.streak),
+        minutes_today: typeof source.minutes_today === "number" ? source.minutes_today : (fallbackSource.minutes_today ?? DEFAULT_PROGRESS.minutes_today),
+        minutes_this_week: typeof source.minutes_this_week === "number" ? source.minutes_this_week : (fallbackSource.minutes_this_week ?? DEFAULT_PROGRESS.minutes_this_week),
+        minutes_total: typeof source.minutes_total === "number" ? source.minutes_total : (fallbackSource.minutes_total ?? DEFAULT_PROGRESS.minutes_total),
+        total_learning_time_seconds: typeof source.total_learning_time_seconds === "number"
+            ? source.total_learning_time_seconds
+            : (fallbackSource.total_learning_time_seconds ?? DEFAULT_PROGRESS.total_learning_time_seconds),
+        pre_assessment_completed: typeof source.pre_assessment_completed === "boolean"
+            ? source.pre_assessment_completed
+            : (fallbackSource.pre_assessment_completed ?? DEFAULT_PROGRESS.pre_assessment_completed),
+        currentTourStep: typeof source.currentTourStep === "number"
+            ? source.currentTourStep
+            : (fallbackSource.currentTourStep ?? DEFAULT_PROGRESS.currentTourStep),
+        tourCompleted: typeof source.tourCompleted === "boolean"
+            ? source.tourCompleted
+            : (fallbackSource.tourCompleted ?? DEFAULT_PROGRESS.tourCompleted),
     };
 };
 
@@ -96,7 +112,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                 try {
                     const liveProgress = await ApiService.getProgress();
                     if (liveProgress && liveProgress.user_id) {
-                        setProgress(normalizeProgress(liveProgress));
+                        setProgress(prev => normalizeProgress(liveProgress, prev));
                         if (liveProgress.primary_track_id) {
                             setActiveCourseIdState(liveProgress.primary_track_id);
                             localStorage.setItem("vina_active_course_id", liveProgress.primary_track_id);
@@ -137,7 +153,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
             const result = await ApiService.completeLesson(activeCourseId, lessonId, score, total, totalLessonTimeS, sessionId);
             if (result.user_id) {
-                setProgress(normalizeProgress(result));
+                setProgress(prev => normalizeProgress(result, prev));
             } else {
                 // OPTIMISTIC LOCAL CACHE FALLBACK IF BACKEND SHAPE WEIRD
                 setProgress(prev => {
@@ -187,7 +203,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         try {
             const updatedProgress = await ApiService.syncProgress(minutes);
             if (updatedProgress) {
-                setProgress(normalizeProgress(updatedProgress));
+                setProgress(prev => normalizeProgress(updatedProgress, prev));
             }
         } catch (e) {
             console.error("Failed to sync minutes to server", e);
