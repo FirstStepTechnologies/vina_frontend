@@ -47,7 +47,6 @@ export default function PathwayScreen() {
     const { user } = useUser();
     const { updateProgress } = useProgress();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showModal, setShowModal] = useState(false);
 
     const profession = user?.onboardingResponses?.role || user?.profile?.profession || "Learner";
 
@@ -111,13 +110,14 @@ export default function PathwayScreen() {
 
                                     {/* Course Card */}
                                     <div
-                                        onClick={() => isActive && setShowModal(true)}
+                                        onClick={() => isActive && !isSubmitting && finalizePathway("/dashboard")}
                                         className={cn(
                                             "flex-1 rounded-[1.5rem] p-5 transition-all duration-300 border-2 shadow-sm relative overflow-hidden",
                                             isActive
-                                                ? "bg-white border-teal-100 hover:border-teal-300 hover:shadow-md cursor-pointer"
+                                                ? `bg-white border-teal-100 hover:border-teal-300 hover:shadow-md ${isSubmitting ? "cursor-wait" : "cursor-pointer"}`
                                                 : "bg-white/60 border-transparent border-dashed cursor-not-allowed border-gray-200"
                                         )}
+                                        aria-disabled={isActive && isSubmitting}
                                     >
                                         {isActive && (
                                             <div className="absolute -right-4 -top-4 w-16 h-16 bg-teal-50 rounded-full blur-xl"></div>
@@ -151,21 +151,22 @@ export default function PathwayScreen() {
                 <div className="max-w-md mx-auto relative bottom-6">
                     <Button
                         className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-teal-500/20 bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 transition-transform active:scale-95"
-                        onClick={() => setShowModal(true)}
+                        disabled={isSubmitting}
+                        onClick={() => finalizePathway("/dashboard")}
                     >
-                        Start Learning <ArrowRight size={20} />
+                        {isSubmitting ? "Starting..." : "Start Learning"} <ArrowRight size={20} />
                     </Button>
                 </div>
             </div>
 
-            {/* Action Modal (Bottom Sheet style) */}
+            {/* Action Modal (Bottom Sheet style)
+            Temporarily disabled while pre-assessment and multi-course exploration are unavailable.
+            Restore this block when those flows are ready again.
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center p-4">
-                    {/* Click outside to close */}
                     <div className="absolute inset-0" onClick={() => setShowModal(false)}></div>
 
                     <div className="relative w-full max-w-sm bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 animate-in slide-in-from-bottom-10 fade-in duration-300 shadow-2xl">
-                        {/* Drag Handle */}
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden"></div>
 
                         <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Ready to begin?</h2>
@@ -203,6 +204,7 @@ export default function PathwayScreen() {
                     </div>
                 </div>
             )}
+            */}
         </div>
     );
 }
