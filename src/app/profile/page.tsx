@@ -35,22 +35,7 @@ export default function ProfilePage() {
         }
     };
 
-    const onboardingSummary = user?.onboardingResponses ? [
-        { label: "Role", value: user.onboardingResponses.role },
-        { label: "Industry", value: user.onboardingResponses.industry },
-        { label: "Experience", value: user.onboardingResponses.experience },
-        { label: "Leadership", value: user.onboardingResponses.level },
-        { label: "Focus Goal", value: user.onboardingResponses.goal },
-        { label: "Learning Pace", value: user.onboardingResponses.pace },
-        { label: "Commitment", value: user.onboardingResponses.commitment },
-        { label: "Reminders", value: user.onboardingResponses.reminders },
-        { label: "Timeline", value: user.onboardingResponses.timeline },
-    ] : [
-        // Fallback for existing users in demo
-        { label: "Role", value: user?.profile?.profession || "Professional" },
-        { label: "Learning Pace", value: "Steady Growth" },
-        { label: "Commitment", value: `${user?.profile?.daily_goal_minutes || 10} Minutes` },
-    ];
+    const role = user?.onboardingResponses?.role || user?.profile?.profession || "Not set";
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f0fdfa] pb-24">
@@ -137,12 +122,10 @@ export default function ProfilePage() {
                     </div>
                     <Card className="p-6 bg-white border-teal-100 shadow-sm relative overflow-hidden">
                         <div className="grid grid-cols-1 gap-4">
-                            {onboardingSummary.map((item, i) => (
-                                <div key={i} className="flex justify-between items-center py-2 border-b border-teal-50 last:border-0">
-                                    <span className="text-[10px] font-black text-teal-600/60 uppercase tracking-widest">{item.label}</span>
-                                    <span className="text-xs font-bold text-teal-900 uppercase tracking-tight">{item.value || "Not set"}</span>
-                                </div>
-                            ))}
+                            <div className="flex justify-between items-center py-2">
+                                <span className="text-[10px] font-black text-teal-600/60 uppercase tracking-widest">Role</span>
+                                <span className="text-xs font-bold text-teal-900 uppercase tracking-tight">{role}</span>
+                            </div>
                         </div>
                     </Card>
                 </section>
