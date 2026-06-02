@@ -67,15 +67,14 @@ export default function PracticePage() {
     const minutesTotal = progress.minutes_total || 0;
     const streak = progress.streak || 0;
     const hasCompletedLessons = completedLessonCount > 0;
-    // Note: lastPracticeDate field doesn't exist in VinaProgress type
-    // For now, we'll always allow practice (can be enhanced later)
-    const hasPracticedToday = false; // Disabled until backend supports this field
+    const todayKey = new Date().toISOString().split("T")[0];
+    const practiceCompletedKey = `vina_practice_completed_${user?.id || "anonymous"}_${activeCourseId}`;
 
     useEffect(() => {
-        if (hasPracticedToday) {
+        if (localStorage.getItem(practiceCompletedKey) === todayKey) {
             setIsCompleted(true);
         }
-    }, [hasPracticedToday]);
+    }, [practiceCompletedKey, todayKey]);
 
     const startPractice = async () => {
         setIsPracticing(true);
@@ -133,6 +132,7 @@ export default function PracticePage() {
     };
 
     const handleContinueToResult = () => {
+        localStorage.setItem(practiceCompletedKey, todayKey);
         setShowCelebration(false);
         setIsCompleted(true);
     };
