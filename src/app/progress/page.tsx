@@ -1,30 +1,57 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useProgress } from "@/contexts/ProgressContext";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, Clock, Flame, Gem, Heart, Trophy } from "lucide-react";
-import { MOCK_LESSONS } from "@/lib/api/mock-data";
+import { ApiService } from "@/lib/api/service";
+import { Lesson } from "@/lib/api/types";
 
 export default function ProgressPage() {
     const { progress, activeCourseId } = useProgress();
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadCourseMap() {
+            try {
+                const mapData = await ApiService.getCourseMap(activeCourseId);
+                if (isMounted) setLessons(mapData);
+            } catch (error) {
+                console.error("Failed to load progress course map", error);
+            }
+        }
+
+        loadCourseMap();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [activeCourseId]);
 
     const courseProgressById = progress.course_progress || {};
     const courseProgress = courseProgressById[activeCourseId] || { completed_lessons: [] };
-    const completedLessons = Array.isArray(courseProgress.completed_lessons) ? courseProgress.completed_lessons : [];
+    const completedLessonIds = Array.isArray(courseProgress.completed_lessons) ? courseProgress.completed_lessons : [];
+    const completedLessonsFromMap = lessons.filter(lesson => lesson.status === "completed");
+    const fallbackCompletedLessons = completedLessonIds
+        .map(id => lessons.find(lesson => lesson.lessonId === id))
+        .filter((lesson): lesson is Lesson => Boolean(lesson));
+    const completedLessons = completedLessonsFromMap.length > 0 ? completedLessonsFromMap : fallbackCompletedLessons;
+    const completedLessonCount = completedLessonsFromMap.length > 0 ? completedLessonsFromMap.length : completedLessonIds.length;
+    const totalLessonCount = lessons.length || 17;
     const diamonds = progress.diamonds || 0;
     const streak = progress.streak || 0;
     const minutesToday = progress.minutes_today || 0;
     const totalLearningSeconds = progress.total_learning_time_seconds || 0;
     const impactMinutes = totalLearningSeconds / 60 >= 1 ? Math.floor(totalLearningSeconds / 60) : minutesToday;
-    const completionPercent = Math.round((completedLessons.length / 17) * 100);
+    const completionPercent = Math.round((completedLessonCount / totalLessonCount) * 100);
 
     // Get recent activity
     const recentLessons = completedLessons
         .slice()
         .reverse()
         .slice(0, 3)
-        .map(id => MOCK_LESSONS.find(l => l.lessonId === id))
-        .filter(Boolean);
 
     return (
         <div className="min-h-screen p-6 bg-[#f0fdfa] pt-10 pb-24 relative overflow-hidden">
@@ -75,7 +102,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3">
                             <CheckCircle size={28} className="text-purple-600" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-purple-900 leading-none">{completedLessons.length}</span>
+                        <span className="text-2xl font-black text-purple-900 leading-none">{completedLessonCount}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 mt-2">Lessons</span>
                     </Card>
                 </div>
@@ -114,7 +141,7 @@ export default function ProgressPage() {
                         />
                     </div>
                     <p className="text-[10px] font-black text-gray-400 mt-3 uppercase tracking-widest">
-                        {completedLessons.length} OF 17 LESSONS COMPLETED
+                        {completedLessonCount} OF {totalLessonCount} LESSONS COMPLETED
                     </p>
                 </div>
 
