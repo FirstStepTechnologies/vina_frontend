@@ -9,6 +9,52 @@ type LegacyLesson = Partial<Lesson> & {
 };
 
 export class ApiService {
+    private static normalizeUser(raw: any): VinaUser {
+        const profile = raw?.profile || {};
+
+        return {
+            ...raw,
+            id: raw?.id || raw?.userId || raw?.user_id || "",
+            fullName: raw?.fullName || raw?.full_name,
+            profile: {
+                ...profile,
+                profession: profile.profession || raw?.profession || "Learner",
+                industry: profile.industry || raw?.industry,
+                experience_level: profile.experience_level || raw?.experience_level,
+                leadership_level: profile.leadership_level || raw?.leadership_level,
+                daily_goal_minutes:
+                    profile.daily_goal_minutes ??
+                    raw?.daily_goal_minutes ??
+                    raw?.dailyGoalMinutes ??
+                    raw?.preferences?.dailyGoal ??
+                    10,
+                resolution: profile.resolution || raw?.resolution,
+            },
+            onboardingResponses: raw?.onboardingResponses || raw?.onboarding_responses || profile.onboardingResponses,
+            pre_assessment_completed: raw?.pre_assessment_completed ?? raw?.preAssessmentCompleted,
+        };
+    }
+
+    private static normalizeProfileUpdate(updates: any): any {
+        const source = updates?.profile ? { ...updates, ...updates.profile } : { ...updates };
+        delete source.profile;
+
+        if (source.daily_goal_minutes !== undefined && source.dailyGoalMinutes === undefined) {
+            source.dailyGoalMinutes = source.daily_goal_minutes;
+        }
+        if (source.dailyGoalMinutes !== undefined && source.daily_goal_minutes === undefined) {
+            source.daily_goal_minutes = source.dailyGoalMinutes;
+        }
+        if (source.onboardingResponses !== undefined && source.onboarding_responses === undefined) {
+            source.onboarding_responses = source.onboardingResponses;
+        }
+        if (source.onboarding_responses !== undefined && source.onboardingResponses === undefined) {
+            source.onboardingResponses = source.onboarding_responses;
+        }
+
+        return source;
+    }
+
     private static getAuthHeader(): Record<string, string> {
         if (typeof window === "undefined") return {};
         const token = localStorage.getItem("vina_token");
@@ -61,7 +107,7 @@ export class ApiService {
             if (data.access_token) {
                 localStorage.setItem("vina_token", data.access_token);
             }
-            return data;
+            return { ...data, user: this.normalizeUser(data.user) };
         } catch (error) {
             console.error('[API] Registration failed:', error);
             throw error;
@@ -79,7 +125,7 @@ export class ApiService {
         if (data.access_token) {
             localStorage.setItem("vina_token", data.access_token);
         }
-        return data;
+        return { ...data, user: this.normalizeUser(data.user) };
     }
 
     /**
@@ -96,14 +142,14 @@ export class ApiService {
         if (data.access_token) {
             localStorage.setItem("vina_token", data.access_token);
         }
-        return data;
+        return { ...data, user: this.normalizeUser(data.user) };
     }
 
     static async getProfile(): Promise<VinaUser> {
         const response = await fetch(`${API_BASE_URL}/user/profile`, {
             headers: this.getAuthHeader(),
         });
-        return this.handleResponse<VinaUser>(response);
+        return this.normalizeUser(await this.handleResponse<any>(response));
     }
 
     static async getProgress(): Promise<any> {
@@ -120,9 +166,9 @@ export class ApiService {
                 "Content-Type": "application/json",
                 ...this.getAuthHeader(),
             },
-            body: JSON.stringify(updates),
+            body: JSON.stringify(this.normalizeProfileUpdate(updates)),
         });
-        return this.handleResponse<VinaUser>(response);
+        return this.normalizeUser(await this.handleResponse<any>(response));
     }
 
     static async getCourses(): Promise<CourseSummary[]> {

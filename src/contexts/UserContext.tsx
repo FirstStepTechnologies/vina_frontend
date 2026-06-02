@@ -74,15 +74,31 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const mergeUser = (base: VinaUser | null, updates: any): VinaUser | null => {
         if (!base) return updates;
+        const compact = (value: Record<string, any>) => Object.fromEntries(
+            Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
+        );
+        const profileUpdates = {
+            ...compact(updates?.profile || {}),
+            ...(updates?.profession !== undefined ? { profession: updates.profession } : {}),
+            ...(updates?.industry !== undefined ? { industry: updates.industry } : {}),
+            ...(updates?.experience_level !== undefined ? { experience_level: updates.experience_level } : {}),
+            ...(updates?.leadership_level !== undefined ? { leadership_level: updates.leadership_level } : {}),
+            ...(updates?.daily_goal_minutes !== undefined ? { daily_goal_minutes: updates.daily_goal_minutes } : {}),
+            ...(updates?.dailyGoalMinutes !== undefined ? { daily_goal_minutes: updates.dailyGoalMinutes } : {}),
+            ...(updates?.resolution !== undefined ? { resolution: updates.resolution } : {}),
+        };
 
         return {
             ...base,
             ...updates,
+            id: updates?.id || base.id,
+            email: updates?.email || base.email,
+            fullName: updates?.fullName || base.fullName,
             profile: {
                 ...base.profile,
-                ...updates?.profile,
+                ...profileUpdates,
             },
-            onboardingResponses: updates?.onboardingResponses || base.onboardingResponses,
+            onboardingResponses: updates?.onboardingResponses || updates?.onboarding_responses || base.onboardingResponses,
         };
     };
 
@@ -94,7 +110,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
 
         const updatedUser = await ApiService.updateProfile(updates);
-        const mergedUser = mergeUser(optimisticUser, updatedUser);
+        const mergedUser = mergeUser(mergeUser(optimisticUser, updatedUser), updates);
         if (mergedUser) {
             setUser(mergedUser);
             localStorage.setItem("vina_user", JSON.stringify(mergedUser));
