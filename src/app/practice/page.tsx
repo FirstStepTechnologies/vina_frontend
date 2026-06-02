@@ -33,8 +33,13 @@ export default function PracticePage() {
         dailyGoalMinutes: 0
     });
 
-    const courseProgress = progress.course_progress[activeCourseId] || { completed_lessons: [] };
-    const completedLessons = courseProgress.completed_lessons || [];
+    const courseProgressById = progress.course_progress || {};
+    const courseProgress = courseProgressById[activeCourseId] || { completed_lessons: [] };
+    const completedLessons = Array.isArray(courseProgress.completed_lessons) ? courseProgress.completed_lessons : [];
+    const minutesToday = progress.minutes_today || 0;
+    const minutesThisWeek = progress.minutes_this_week || 0;
+    const minutesTotal = progress.minutes_total || 0;
+    const streak = progress.streak || 0;
     const hasCompletedLessons = completedLessons.length > 0;
     // Note: lastPracticeDate field doesn't exist in VinaProgress type
     // For now, we'll always allow practice (can be enhanced later)
@@ -71,9 +76,9 @@ export default function PracticePage() {
 
         // Gamification Logic for Practice
         const practiceMins = 2; // Fixed time for daily challenge
-        const newMinutesToday = progress.minutes_today + practiceMins;
+        const newMinutesToday = minutesToday + practiceMins;
         const dailyGoal = user?.profile?.daily_goal_minutes || 10;
-        const reachedGoal = newMinutesToday >= dailyGoal && progress.minutes_today < dailyGoal;
+        const reachedGoal = newMinutesToday >= dailyGoal && minutesToday < dailyGoal;
         const diamondReward = finalScore * 10; // 10 pts per correct answer
 
         // Update Global State - removed lastPracticeDate and practicePointsToday as they don't exist in VinaProgress type
@@ -82,17 +87,17 @@ export default function PracticePage() {
         addDiamonds(diamondReward);
         addMinutes(practiceMins);
 
-        const isFirstOfToday = progress.minutes_today === 0;
+        const isFirstOfToday = minutesToday === 0;
         if (isFirstOfToday) {
-            updateProgress({ streak: progress.streak + 1 });
+            updateProgress({ streak: streak + 1 });
         }
 
         setCelebrationStats({
             diamondsEarned: diamondReward,
             streakEarned: isFirstOfToday,
             minutes_today: newMinutesToday,
-            minutes_this_week: progress.minutes_this_week + practiceMins,
-            minutes_total: progress.minutes_total + practiceMins,
+            minutes_this_week: minutesThisWeek + practiceMins,
+            minutes_total: minutesTotal + practiceMins,
             dailyGoalAchieved: reachedGoal,
             dailyGoalMinutes: dailyGoal
         });

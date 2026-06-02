@@ -20,6 +20,29 @@ const DEFAULT_PROGRESS: VinaProgress = {
     tourCompleted: false,
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+    typeof value === "object" && value !== null && !Array.isArray(value)
+);
+
+const normalizeProgress = (raw: unknown): VinaProgress => {
+    const source = isRecord(raw) ? raw as Partial<VinaProgress> : {};
+
+    return {
+        ...DEFAULT_PROGRESS,
+        ...source,
+        course_progress: isRecord(source.course_progress) ? source.course_progress as VinaProgress["course_progress"] : {},
+        secondary_track_ids: Array.isArray(source.secondary_track_ids) ? source.secondary_track_ids : [],
+        daily_goal_history: isRecord(source.daily_goal_history) ? source.daily_goal_history as Record<string, boolean> : source.daily_goal_history,
+        diamonds: typeof source.diamonds === "number" ? source.diamonds : DEFAULT_PROGRESS.diamonds,
+        streak: typeof source.streak === "number" ? source.streak : DEFAULT_PROGRESS.streak,
+        minutes_today: typeof source.minutes_today === "number" ? source.minutes_today : DEFAULT_PROGRESS.minutes_today,
+        minutes_this_week: typeof source.minutes_this_week === "number" ? source.minutes_this_week : DEFAULT_PROGRESS.minutes_this_week,
+        minutes_total: typeof source.minutes_total === "number" ? source.minutes_total : DEFAULT_PROGRESS.minutes_total,
+        total_learning_time_seconds: typeof source.total_learning_time_seconds === "number" ? source.total_learning_time_seconds : DEFAULT_PROGRESS.total_learning_time_seconds,
+        pre_assessment_completed: typeof source.pre_assessment_completed === "boolean" ? source.pre_assessment_completed : DEFAULT_PROGRESS.pre_assessment_completed,
+    };
+};
+
 interface ProgressContextType {
     progress: VinaProgress;
     activeCourseId: string;
@@ -60,7 +83,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
             if (stored) {
                 try {
                     const parsed = JSON.parse(stored);
-                    setProgress({ ...DEFAULT_PROGRESS, ...parsed });
+                    setProgress(normalizeProgress(parsed));
                 } catch (e) {
                     console.error("Failed to parse progress cache", e);
                 }
@@ -71,7 +94,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
                 try {
                     const liveProgress = await ApiService.getProgress();
                     if (liveProgress && liveProgress.user_id) {
-                        setProgress(liveProgress);
+                        setProgress(normalizeProgress(liveProgress));
                         if (liveProgress.primary_track_id) {
                             setActiveCourseIdState(liveProgress.primary_track_id);
                             localStorage.setItem("vina_active_course_id", liveProgress.primary_track_id);
@@ -95,7 +118,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     }, [progress, isLoading]);
 
     const updateProgress = (updates: Partial<VinaProgress>) => {
-        setProgress(prev => ({ ...prev, ...updates }));
+        setProgress(prev => normalizeProgress({ ...prev, ...updates }));
     };
 
     const completeLesson = async (lessonId: string, score: number = 0, total: number = 0) => {
@@ -112,7 +135,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
             const result = await ApiService.completeLesson(activeCourseId, lessonId, score, total, totalLessonTimeS, sessionId);
             if (result.user_id) {
-                setProgress(result);
+                setProgress(normalizeProgress(result));
             } else {
                 // OPTIMISTIC LOCAL CACHE FALLBACK IF BACKEND SHAPE WEIRD
                 setProgress(prev => {
@@ -162,7 +185,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         try {
             const updatedProgress = await ApiService.syncProgress(minutes);
             if (updatedProgress) {
-                setProgress(updatedProgress);
+                setProgress(normalizeProgress(updatedProgress));
             }
         } catch (e) {
             console.error("Failed to sync minutes to server", e);
@@ -177,7 +200,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     };
 
     const resetProgress = () => {
-        setProgress(DEFAULT_PROGRESS);
+        setProgress(normalizeProgress(DEFAULT_PROGRESS));
         localStorage.removeItem("vina_progress");
     };
 
