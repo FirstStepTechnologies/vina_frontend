@@ -12,6 +12,7 @@ import {
     registerWithEmail,
     loginWithEmail,
 } from "@/lib/firebase/auth";
+import { getPostLoginRoute } from "@/lib/onboarding";
 
 type Mode = "signin" | "signup";
 
@@ -22,16 +23,7 @@ export default function LoginPage() {
     // Prevent flashing the login screen if already authenticated
     useEffect(() => {
         if (!isUserLoading && user) {
-            const hasOnboarding = user.onboardingResponses && Object.keys(user.onboardingResponses).length > 0;
-            const hasAssessment = user.pre_assessment_completed;
-
-            if (!hasOnboarding) {
-                router.replace("/intro");
-            } else if (!hasAssessment) {
-                router.replace("/pathway");
-            } else {
-                router.replace("/dashboard");
-            }
+            router.replace(getPostLoginRoute(user));
         }
     }, [user, isUserLoading, router]);
 
@@ -77,23 +69,24 @@ export default function LoginPage() {
 
         // Fetch the full rich user profile from backend (includes .profile struct)
         const fullProfile = await ApiService.getProfile();
+        const progress = await ApiService.getProgress().catch(() => null);
+        const hydratedProfile = {
+            ...fullProfile,
+            progress: progress || fullProfile.progress,
+            pre_assessment_completed: fullProfile.pre_assessment_completed || progress?.pre_assessment_completed,
+        };
 
         // Login with the properly structured user
         login({
             ...token,
-            user: fullProfile
+            user: hydratedProfile
         });
 
         // Determine redirection stage
-        const hasOnboarding = fullProfile?.onboardingResponses && Object.keys(fullProfile.onboardingResponses).length > 0;
-        const hasAssessment = fullProfile?.pre_assessment_completed;
-
-        if (explicitRedirectToIntro || !hasOnboarding) {
+        if (explicitRedirectToIntro) {
             router.replace("/intro");
-        } else if (!hasAssessment) {
-            router.replace("/pathway");
         } else {
-            router.replace("/dashboard");
+            router.replace(getPostLoginRoute(hydratedProfile, progress));
         }
     };
 

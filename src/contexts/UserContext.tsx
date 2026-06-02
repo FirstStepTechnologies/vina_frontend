@@ -34,8 +34,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
                     // Verify the session is still valid.
                     const freshUser = await ApiService.getProfile();
-                    setUser(freshUser);
-                    localStorage.setItem("vina_user", JSON.stringify(freshUser));
+                    const liveProgress = await ApiService.getProgress().catch(() => null);
+                    const hydratedUser = {
+                        ...freshUser,
+                        progress: liveProgress || freshUser.progress,
+                        pre_assessment_completed: freshUser.pre_assessment_completed || liveProgress?.pre_assessment_completed,
+                    };
+                    setUser(hydratedUser);
+                    localStorage.setItem("vina_user", JSON.stringify(hydratedUser));
                 } catch (e) {
                     console.error("Session invalid or server error", e);
                     // Invalid token or server issue, clean up session

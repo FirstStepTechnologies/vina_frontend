@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/UserContext";
+import { getPostLoginRoute } from "@/lib/onboarding";
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -13,16 +14,7 @@ export default function WelcomeScreen() {
   // Auto-redirect if user already exists
   useEffect(() => {
     if (!isLoading && user) {
-      const hasOnboarding = user.onboardingResponses && Object.keys(user.onboardingResponses).length > 0;
-      const hasAssessment = user.pre_assessment_completed;
-
-      if (!hasOnboarding) {
-        router.replace("/intro");
-      } else if (!hasAssessment) {
-        router.replace("/pathway");
-      } else {
-        router.replace("/dashboard");
-      }
+      router.replace(getPostLoginRoute(user));
     }
   }, [user, isLoading, router]);
 
