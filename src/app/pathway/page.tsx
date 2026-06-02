@@ -59,6 +59,8 @@ export default function PathwayScreen() {
             updateProgress({
                 pre_assessment_completed: true,
                 starting_lesson: result.startingLesson || "l01_what_llms_are",
+                currentTourStep: 0,
+                tourCompleted: false,
             });
             router.replace(redirectTarget);
         } catch (error) {

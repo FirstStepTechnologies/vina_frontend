@@ -105,7 +105,10 @@ export function VinaAssistant() {
         }
     ], [router]);
 
-    const currentStep = TOUR_STEPS.find(s => s.id === progress.currentTourStep);
+    const rawTourStep = typeof progress.currentTourStep === "number" ? progress.currentTourStep : 0;
+    const currentTourStep = TOUR_STEPS.some(step => step.id === rawTourStep) ? rawTourStep : 0;
+    const tourCompleted = progress.tourCompleted === true;
+    const currentStep = TOUR_STEPS.find(s => s.id === currentTourStep);
 
     // Dynamic positioning and collision detection
     useEffect(() => {
@@ -166,7 +169,7 @@ export function VinaAssistant() {
     }, [currentStep, pathname, isVisible]);
 
     useEffect(() => {
-        if (progress.tourCompleted) {
+        if (tourCompleted) {
             setIsVisible(false);
             return;
         }
@@ -177,7 +180,7 @@ export function VinaAssistant() {
         } else {
             setIsVisible(false);
         }
-    }, [pathname, currentStep, progress.tourCompleted]);
+    }, [pathname, currentStep, tourCompleted]);
 
     const handleNext = () => {
         if (!currentStep) return;
@@ -185,6 +188,7 @@ export function VinaAssistant() {
             if (currentStep.action) currentStep.action();
             updateProgress({ currentTourStep: currentStep.id + 1 });
         } else {
+            if (currentStep.action) currentStep.action();
             updateProgress({ tourCompleted: true });
             setIsVisible(false);
         }

@@ -40,6 +40,8 @@ const normalizeProgress = (raw: unknown): VinaProgress => {
         minutes_total: typeof source.minutes_total === "number" ? source.minutes_total : DEFAULT_PROGRESS.minutes_total,
         total_learning_time_seconds: typeof source.total_learning_time_seconds === "number" ? source.total_learning_time_seconds : DEFAULT_PROGRESS.total_learning_time_seconds,
         pre_assessment_completed: typeof source.pre_assessment_completed === "boolean" ? source.pre_assessment_completed : DEFAULT_PROGRESS.pre_assessment_completed,
+        currentTourStep: typeof source.currentTourStep === "number" ? source.currentTourStep : DEFAULT_PROGRESS.currentTourStep,
+        tourCompleted: typeof source.tourCompleted === "boolean" ? source.tourCompleted : DEFAULT_PROGRESS.tourCompleted,
     };
 };
 
