@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, CheckCircle, ChevronRight, Lock } from "lucide-react";
+import { BookOpen, Clock, Lock } from "lucide-react";
 import { ApiService } from "@/lib/api/service";
 import { useUser } from "@/contexts/UserContext";
 import { useProgress } from "@/contexts/ProgressContext";
@@ -16,7 +16,31 @@ interface CourseSummary {
     preparesFor: string[];
     totalLessons: number;
     estimatedDurationMinutes: number;
+    status?: "available" | "coming-soon";
 }
+
+const COMING_SOON_COURSES: CourseSummary[] = [
+    {
+        courseId: "c_rag_arch",
+        courseName: "RAG & Knowledge Systems",
+        seriesName: "Vina Core",
+        tagline: "Connect LLMs to your own data to build powerful, context-aware applications.",
+        preparesFor: ["Retrieval-augmented generation", "Knowledge bases", "Context-aware AI"],
+        totalLessons: 0,
+        estimatedDurationMinutes: 0,
+        status: "coming-soon",
+    },
+    {
+        courseId: "c_agentic_ai",
+        courseName: "Agentic AI Workflows",
+        seriesName: "Vina Core",
+        tagline: "Deploy autonomous agents that can plan and execute multi-step tasks.",
+        preparesFor: ["AI agents", "Workflow automation", "Multi-step reasoning"],
+        totalLessons: 0,
+        estimatedDurationMinutes: 0,
+        status: "coming-soon",
+    },
+];
 
 export default function Portfolio() {
     const router = useRouter();
@@ -54,20 +78,27 @@ export default function Portfolio() {
 
     // Grouping logic (Active vs Available)
     const activeCourses = courses.filter(c => progress.course_progress?.[c.courseId]);
-    const discoverCourses = courses.filter(c => !progress.course_progress?.[c.courseId]);
+    const discoverCourses = [
+        ...courses.filter(c => !progress.course_progress?.[c.courseId]),
+        ...COMING_SOON_COURSES,
+    ];
 
     const renderCourseCard = (course: CourseSummary, isActive: boolean) => {
+        const isComingSoon = course.status === "coming-soon";
         const courseData = progress.course_progress?.[course.courseId];
         const completedLessons = courseData?.completed_lessons?.length || 0;
-        const progressPercent = Math.round((completedLessons / course.totalLessons) * 100);
+        const progressPercent = course.totalLessons > 0 ? Math.round((completedLessons / course.totalLessons) * 100) : 0;
 
         return (
             <div
                 key={course.courseId}
-                onClick={() => handleSelectCourse(course.courseId)}
-                className={`p-5 rounded-3xl mb-4 border transition-all cursor-pointer group ${activeCourseId === course.courseId
+                onClick={() => !isComingSoon && handleSelectCourse(course.courseId)}
+                aria-disabled={isComingSoon}
+                className={`p-5 rounded-3xl mb-4 border transition-all group ${isComingSoon
+                    ? "bg-white/70 border-gray-200 border-dashed cursor-not-allowed opacity-90"
+                    : activeCourseId === course.courseId
                         ? "bg-teal-50 border-teal-200 shadow-md ring-2 ring-teal-500/20"
-                        : "bg-white border-gray-100 shadow-sm hover:shadow-md hover:border-teal-100"
+                        : "bg-white border-gray-100 shadow-sm hover:shadow-md hover:border-teal-100 cursor-pointer"
                     }`}
             >
                 <div className="flex justify-between items-start mb-3">
@@ -81,13 +112,24 @@ export default function Portfolio() {
                             {course.courseName}
                         </h3>
                     </div>
+                    {isComingSoon && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">
+                            <Lock size={12} />
+                            <span>Coming Soon</span>
+                        </div>
+                    )}
                 </div>
 
                 <p className="text-sm text-gray-600 mb-4 font-medium leading-relaxed">
                     {course.tagline}
                 </p>
 
-                {isActive ? (
+                {isComingSoon ? (
+                    <div className="flex items-center gap-2 text-xs font-black text-gray-400 border-t border-gray-100 pt-3 uppercase tracking-wider">
+                        <Clock size={14} />
+                        <span>Coming soon</span>
+                    </div>
+                ) : isActive ? (
                     <div>
                         <div className="flex justify-between text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
                             <span>Your Progress</span>

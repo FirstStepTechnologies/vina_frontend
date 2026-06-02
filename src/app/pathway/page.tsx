@@ -22,7 +22,7 @@ const PATHWAY_COURSES = [
     },
     {
         id: "c_rag_arch",
-        title: "RAG Architectures",
+        title: "RAG & Knowledge Systems",
         description: "Connect LLMs to your own data to build powerful, context-aware applications.",
         status: "locked",
         icon: BookOpen,
