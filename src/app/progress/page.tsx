@@ -1,18 +1,21 @@
 "use client";
 
 import { useProgress } from "@/contexts/ProgressContext";
-import { useUser } from "@/contexts/UserContext";
 import { Card } from "@/components/ui/card";
-import { BarChart3, CheckCircle, Clock, Flame, Gem, Heart, Trophy } from "lucide-react";
+import { CheckCircle, Clock, Flame, Gem, Heart, Trophy } from "lucide-react";
 import { MOCK_LESSONS } from "@/lib/api/mock-data";
-import { cn } from "@/lib/utils";
 
 export default function ProgressPage() {
     const { progress, activeCourseId } = useProgress();
-    const { user } = useUser();
 
-    const courseProgress = progress.course_progress[activeCourseId] || { completed_lessons: [] };
-    const completedLessons = courseProgress.completed_lessons || [];
+    const courseProgressById = progress.course_progress || {};
+    const courseProgress = courseProgressById[activeCourseId] || { completed_lessons: [] };
+    const completedLessons = Array.isArray(courseProgress.completed_lessons) ? courseProgress.completed_lessons : [];
+    const diamonds = progress.diamonds || 0;
+    const streak = progress.streak || 0;
+    const minutesToday = progress.minutes_today || 0;
+    const totalLearningSeconds = progress.total_learning_time_seconds || 0;
+    const impactMinutes = totalLearningSeconds / 60 >= 1 ? Math.floor(totalLearningSeconds / 60) : minutesToday;
     const completionPercent = Math.round((completedLessons.length / 17) * 100);
 
     // Get recent activity
@@ -45,7 +48,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
                             <Gem size={28} fill="#3b82f6" fillOpacity={0.2} className="text-blue-500" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-blue-900 leading-none">{progress.diamonds || 0}</span>
+                        <span className="text-2xl font-black text-blue-900 leading-none">{diamonds}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 mt-2">Diamonds</span>
                     </Card>
 
@@ -54,7 +57,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-3">
                             <Flame size={28} fill="#f97316" fillOpacity={0.2} className="text-orange-500" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-orange-900 leading-none">{progress.streak || 0}</span>
+                        <span className="text-2xl font-black text-orange-900 leading-none">{streak}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-orange-400 mt-2">Day Streak</span>
                     </Card>
 
@@ -63,7 +66,7 @@ export default function ProgressPage() {
                         <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mb-3">
                             <Clock size={28} className="text-teal-600" strokeWidth={2.5} />
                         </div>
-                        <span className="text-2xl font-black text-teal-900 leading-none">{progress.minutes_today || 0}</span>
+                        <span className="text-2xl font-black text-teal-900 leading-none">{minutesToday}</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-teal-400 mt-2">Mins Today</span>
                     </Card>
 
@@ -93,7 +96,7 @@ export default function ProgressPage() {
                             </div>
                         </div>
                         <p className="text-sm font-bold text-teal-800 leading-relaxed italic">
-                            "By spending {progress.total_learning_time_seconds / 60 >= 1 ? Math.floor(progress.total_learning_time_seconds / 60) : progress.minutes_today} minutes on Vina, you've funded an equal amount of education for children in need. Your learning empowers the world."
+                            "By spending {impactMinutes} minutes on Vina, you've funded an equal amount of education for children in need. Your learning empowers the world."
                         </p>
                     </div>
                 </Card>
